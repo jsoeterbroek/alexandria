@@ -10,7 +10,7 @@ from libzim.reader import Archive
 
 from .config import BookSpec, Config
 from .document import COVER_PATH, parse_book
-from .gutenberg import COVER_URL, fetch_html, fetch_metadata, iso639_3, language_label
+from .gutenberg import COVER_FALLBACK_URL, COVER_URL, fetch_html, fetch_metadata, iso639_3, language_label
 from .library import LIBRARY_NAME, write_library
 from .models import Asset, BookMeta
 from .net import Fetcher
@@ -123,11 +123,15 @@ class Workflow:
 
     def _cover(self, spec: BookSpec, media_dir: Path) -> Asset | None:
         """Download the cover art; books without one simply get no illustration."""
-        url = COVER_URL.format(id=spec.book_id)
-        try:
-            payload = self.fetcher.fetch_bytes(url, url_cache_key(url, prefix="cover"))
-        except Exception:  # noqa: BLE001 - covers are optional
-            return None
+        for url in (COVER_URL.format(id=spec.book_id), COVER_FALLBACK_URL.format(id=spec.book_id)):
+            try:
+                payload = self.fetcher.fetch_bytes(url, url_cache_key(url, prefix="cover"))
+            except Exception:  # noqa: BLE001 - try the next cover location
+                continue
+            return self._write_cover(url, payload, media_dir)
+        return None
+
+    def _write_cover(self, url: str, payload: bytes, media_dir: Path) -> Asset:
         target = media_dir / "cover.jpg"
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(payload)

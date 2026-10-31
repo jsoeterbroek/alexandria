@@ -12,6 +12,8 @@ dependencies = [
     "libzim>=4.0.0",
     "pillow>=13.0.0",
     "pycountry>=26.2.16",
+    "pylatexenc>=2.11",
+    "pypdf>=6.21.4",
     "pyyaml>=6.0.3",
 ]
 

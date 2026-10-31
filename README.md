@@ -100,7 +100,15 @@ Kiwix uses in its catalogue.
 
 Downloads are cached per URL (`cache/media/<name>-<digest>.<ext>`): Gutenberg
 reuses filenames such as `images/cover.jpg` across books, so a filename-only
-cache would hand one book another book's cover.
+cache would hand one book another book's cover. Covers fall back to
+`pg<id>.cover.medium.jpg` when `images/cover.jpg` does not exist.
+
+Some ebooks have no HTML edition at all — Tractatus Logico-Philosophicus
+(#5740) ships only as PDF and LaTeX. Those are converted to HTML by
+`alexandria/formats.py` (pypdf / pylatexenc), split into sections on headings
+and proposition numbers, and then follow the normal pipeline. Audio-only
+ebooks (e.g. #26471, a LibriVox recording) are reported as unbuildable rather
+than packed as a track list.
 
 The archive is written to a `.part` file and only renamed after
 `libzim.Archive.check()` and a main-entry check pass, so a failed build never
@@ -138,10 +146,11 @@ Unreadable files are skipped rather than aborting the write.
 | Module                      | Responsibility                                      |
 |-----------------------------|-----------------------------------------------------|
 | `alexandria/config.py`      | YAML descriptor loading and validation              |
-| `alexandria/gutenberg.py`   | RDF metadata, HTML edition and cover discovery      |
+| `alexandria/gutenberg.py`   | RDF metadata, edition discovery, cover lookup        |
 | `alexandria/net.py`         | Cached HTTP fetching with retries                   |
 | `alexandria/document.py`    | Gutenberg HTML → pages, media, table of contents    |
 | `alexandria/zim.py`         | libzim writing, metadata, verification              |
+| `alexandria/formats.py`     | PDF/TeX editions converted to parseable HTML         |
 | `alexandria/library.py`     | Kiwix `library.xml` generation                       |
 | `alexandria/workflow.py`    | Per-book orchestration and error isolation          |
 | `alexandria/cli.py`         | Command line interface                              |

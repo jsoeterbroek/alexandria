@@ -205,6 +205,8 @@ books:
     build: false
   - id: 25344
     title: "The Scarlet Letter"  # top-100 #36
+  - id: 25717
+    title: "The History of the Decline and Fall of the Roman Empire by Edward Gibbon"
   - id: 26471
     title: "Spoon River Anthology"  # top-100 #71
     build: false

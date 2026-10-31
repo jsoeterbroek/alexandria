@@ -21,6 +21,7 @@ from libzim.search import Query, Searcher
 from alexandria.cli import main
 from alexandria.config import BookSpec, Config, ConfigError, load_config
 from alexandria.document import MAX_ARTICLE_BYTES, parse_book
+from alexandria.formats import tex_to_html, text_to_html
 from alexandria.gutenberg import GutenbergError, iso639_3, load_rdf
 from alexandria.library import LIBRARY_NAME, LIBRARY_VERSION, write_library
 from alexandria.models import BookMeta
@@ -422,6 +423,26 @@ class ImageCacheTest(unittest.TestCase):
         url = "https://example.test/images/fig1.png"
         self.assertEqual(url_cache_key(url), url_cache_key(url))
 
+    def test_cover_falls_back_to_medium_url(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            urls: list[str] = []
+
+            class StubFetcher:
+                def fetch_bytes(self, url: str, _key: Path) -> bytes:
+                    urls.append(url)
+                    if url.rstrip("/").endswith("images/cover.jpg"):
+                        raise RuntimeError("404")
+                    return b"medium cover"
+
+            workflow = Workflow.__new__(Workflow)
+            workflow.fetcher = StubFetcher()  # type: ignore[assignment]
+            asset = workflow._cover(BookSpec(book_id="2000"), Path(tmp))
+            self.assertIsNotNone(asset)
+            self.assertEqual(len(urls), 2)
+            self.assertIn("cover.medium.jpg", urls[1])
+            assert asset is not None
+            self.assertEqual(asset.filepath.read_bytes(), b"medium cover")
+
     def test_cover_fetch_is_per_book(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             calls: list[Path] = []
@@ -508,6 +529,73 @@ class WorkflowSkipTest(unittest.TestCase):
         )
         reports, failures, skipped = Workflow(config, log=lambda _message: None).run()
         self.assertEqual((reports, failures, skipped), ([], [], ["999"]))
+
+
+class FormatsTest(unittest.TestCase):
+    """Ebooks without HTML (PDF/TeX only) are converted to parseable HTML."""
+
+    def test_text_to_html_sections(self) -> None:
+        text = (
+            "CHAPTER I.\n\n"
+            "It was a dark and stormy night, and the wind blew steadily.\n\n"
+            "The door creaked open.\n\n"
+            "CHAPTER II.\n\n"
+            "Another day dawned over the hills and far away.\n"
+        )
+        html = text_to_html(text, "Testable Tales")
+        self.assertEqual(html.count('<div class="chapter">'), 2)
+        self.assertIn("<h2>CHAPTER I.</h2>", html)
+        self.assertIn("The door creaked open.", html)
+
+    def test_plain_text_paragraphs_are_escaped(self) -> None:
+        html = text_to_html("A & B <tag>\n\nsecond paragraph", "T")
+        self.assertIn("A &amp; B &lt;tag&gt;", html)
+
+    def test_markers_and_noise_removed(self) -> None:
+        text = (
+            "*** START OF THE PROJECT GUTENBERG EBOOK X ***\n\n"
+            "empty roman\n\n"
+            "Front MatterFront Matter\n\n"
+            + "Real content that is definitely long enough to survive merging. " * 5
+            + "\n\n*** END OF THE PROJECT GUTENBERG EBOOK X ***\n"
+        )
+        html = text_to_html(text, "T")
+        self.assertNotIn("*** START", html)
+        self.assertNotIn("*** END", html)
+        self.assertNotIn("empty roman", html)
+        self.assertIn("<p>Front Matter</p>", html)
+
+    def test_numbered_propositions_become_sections(self) -> None:
+        text = (
+            "1 The world is everything that is the case. " + "Filler sentence here. " * 12 + "\n\n"
+            "1.1 The world is the totality of facts, not of things. " + "More filler text. " * 12 + "\n\n"
+            "2 What is the case, the fact, is the existence of atomic facts. " + "Yet more filler. " * 12
+        )
+        html = text_to_html(text, "Tractatus")
+        self.assertIn("<h2>1. The world is everything", html)
+        self.assertIn("<h2>2. What is the case", html)
+        self.assertIn("1.1 The world is the totality of facts", html)
+
+    def test_tex_source_converted(self) -> None:
+        tex = (
+            "\\documentclass{book}\n\\begin{document}\n"
+            "\\chapter{Chapter I.}\n"
+            + "The stormy night was dark and full of terrors, as everyone said. " * 6
+            + "\n\\end{document}\n"
+        )
+        path = Path(self.enterContext(tempfile.TemporaryDirectory())) / "book.tex"
+        path.write_text(tex, encoding="latin-1")
+        html = tex_to_html(path, "Testable Tales")
+        self.assertIn("<h1>Testable Tales</h1>", html)
+        self.assertIn("stormy night", html)
+
+    def test_utf8_tex_keeps_accents(self) -> None:
+        tex = "\\begin{document}\ngeh\u00f6rt K\u00fcrnberger\n\\end{document}\n"
+        path = Path(self.enterContext(tempfile.TemporaryDirectory())) / "accent.tex"
+        path.write_text(tex, encoding="utf-8")
+        html = tex_to_html(path, "T")
+        self.assertIn("geh\u00f6rt", html)
+        self.assertNotIn("geh\u00c3", html)
 
 
 class LibraryTest(unittest.TestCase):
