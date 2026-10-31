@@ -260,11 +260,14 @@ books:
     title: "The Kama Sutra of Vatsyayana"  # top-100 #85
   - id: 28054
     title: "The Brothers Karamazov"  # top-100 #69
+  - id: 28233
+    title: "Philosophiae Naturalis Principia Mathematica by Isaac Newton"
   - id: 29728
     title: "Cookery and Dining in Imperial Rome by Apicius"
+  - id: 30155
+    title: "Relativity: The Special and General Theory by Albert Einstein"
   - id: 33283
     title: "Calculus Made Easy"  # top-100 #93
-    build: false
   - id: 34901
     title: "On Liberty"  # top-100 #72
   - id: 36034
@@ -274,6 +277,8 @@ books:
   - id: 37683
     title: "Chambers's Twentieth Century Dictionary (part 1 of 4: A-D)"  # top-100 #7
     build: false
+    id: 39713
+    title: "The Foundations of Science by Henri Poincaré"
   - id: 41445
     title: "Frankenstein; or, The modern Prometheus"  # top-100 #83
     build: false
@@ -299,6 +304,12 @@ books:
     title: "The Great Gatsby"  # top-100 #16
   - id: 67098
     title: "Winnie-the-Pooh"  # top-100 #88
+    id: 67138
+    title: "The Sun Also Rises by Ernest Hemingway"
   - id: 67979
     title: "The Blue Castle: a novel"  # top-100 #29
     build: false
+  - id: 71292
+    title: "The calculating engine by Charles Babbage"  
+  - id: 75201
+    title: "A farewell to arms by Ernest Hemingway"
