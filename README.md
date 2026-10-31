@@ -94,9 +94,13 @@ everything; `make refresh` also re-downloads the cached Gutenberg files.
 
 Metadata (`Title`, `Creator`, `Language`, `Description`, `Date`, `Keywords`,
 `Source`, `License`, `Contributor`, `Tags`) comes from the RDF record. Full-text
-and title indexes are built with the book's ISO 639-3 language; the cover is
-stored as a ZIM illustration at 192 px plus a 48 px favicon, which Kiwix uses in
-its catalogue.
+and title indexes are built with the book's ISO 639-3 language. Each book's own
+cover is stored as a ZIM illustration at 192 px plus a 48 px favicon, which
+Kiwix uses in its catalogue.
+
+Downloads are cached per URL (`cache/media/<name>-<digest>.<ext>`): Gutenberg
+reuses filenames such as `images/cover.jpg` across books, so a filename-only
+cache would hand one book another book's cover.
 
 The archive is written to a `.part` file and only renamed after
 `libzim.Archive.check()` and a main-entry check pass, so a failed build never

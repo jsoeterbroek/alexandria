@@ -25,6 +25,7 @@ from bs4 import BeautifulSoup, Tag
 from PIL import Image, ImageOps
 
 from .models import Asset, BookMeta, Page, TocEntry
+from .util import url_cache_key
 
 _HEADINGS = ("h1", "h2", "h3", "h4", "h5", "h6")
 _SECTION_WORDS = (
@@ -606,7 +607,7 @@ def _fetch_image(url: str, media_dir: Path, fetch, seen: dict[str, str]) -> Asse
         )
 
     try:
-        payload = fetch(url, Path(zim_path))
+        payload = fetch(url, url_cache_key(url))
     except Exception:  # noqa: BLE001 - optional media must not fail the build
         return None
     target = media_dir / zim_path.removeprefix("media/")

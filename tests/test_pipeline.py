@@ -24,7 +24,7 @@ from alexandria.document import MAX_ARTICLE_BYTES, parse_book
 from alexandria.gutenberg import GutenbergError, iso639_3, load_rdf
 from alexandria.library import LIBRARY_NAME, LIBRARY_VERSION, write_library
 from alexandria.models import BookMeta
-from alexandria.util import human_size, slugify
+from alexandria.util import human_size, slugify, url_cache_key
 from alexandria.workflow import BookReport, Workflow
 from alexandria.zim import build_zim
 
@@ -406,6 +406,40 @@ class ZimTest(unittest.TestCase):
         search = Searcher(archive).search(Query().set_query("unicorn"))
         self.assertEqual(search.get_estimated_matches(), 1)
         self.assertEqual([result.path for result in search.get_results(0, 5)], ["chapter/002.html"])
+
+
+class ImageCacheTest(unittest.TestCase):
+    """Images from different books often share a filename; caching must not mix them."""
+
+    def test_cache_keys_differ_per_url(self) -> None:
+        alice = url_cache_key("https://www.gutenberg.org/cache/epub/11/images/cover.jpg", prefix="cover")
+        peter = url_cache_key("https://www.gutenberg.org/cache/epub/16/images/cover.jpg", prefix="cover")
+        self.assertNotEqual(alice, peter)
+        self.assertEqual(alice.parent, peter.parent)
+        self.assertEqual(alice.suffix, ".jpg")
+
+    def test_same_url_maps_to_same_key(self) -> None:
+        url = "https://example.test/images/fig1.png"
+        self.assertEqual(url_cache_key(url), url_cache_key(url))
+
+    def test_cover_fetch_is_per_book(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            calls: list[Path] = []
+
+            class StubFetcher:
+                def fetch_bytes(self, url: str, key: Path) -> bytes:
+                    calls.append(key)
+                    return b"data:" + url.encode()
+
+            workflow = Workflow.__new__(Workflow)
+            workflow.fetcher = StubFetcher()  # type: ignore[assignment]
+            first = workflow._cover(BookSpec(book_id="11"), Path(tmp) / "a")
+            second = workflow._cover(BookSpec(book_id="16"), Path(tmp) / "b")
+            self.assertEqual(len(calls), 2)
+            self.assertNotEqual(calls[0], calls[1])
+            assert first is not None and second is not None
+            self.assertNotEqual(first.url, second.url)
+            self.assertEqual(first.zim_path, second.zim_path)
 
 
 class WorkflowSkipTest(unittest.TestCase):

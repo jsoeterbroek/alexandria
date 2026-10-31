@@ -14,7 +14,7 @@ from .gutenberg import COVER_URL, fetch_html, fetch_metadata, iso639_3, language
 from .library import LIBRARY_NAME, write_library
 from .models import Asset, BookMeta
 from .net import Fetcher
-from .util import human_size, slugify
+from .util import human_size, slugify, url_cache_key
 from .zim import build_zim
 
 
@@ -125,10 +125,11 @@ class Workflow:
         """Download the cover art; books without one simply get no illustration."""
         url = COVER_URL.format(id=spec.book_id)
         try:
-            payload = self.fetcher.fetch_bytes(url, Path("media") / "cover.jpg")
+            payload = self.fetcher.fetch_bytes(url, url_cache_key(url, prefix="cover"))
         except Exception:  # noqa: BLE001 - covers are optional
             return None
         target = media_dir / "cover.jpg"
+        target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(payload)
         return Asset(url=url, zim_path=COVER_PATH, mimetype="image/jpeg", filepath=target)
 

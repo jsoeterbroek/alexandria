@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from hashlib import sha256
+from pathlib import Path
+from urllib.parse import unquote, urlparse
 
 _TRANSLITERATIONS = str.maketrans(
     {
@@ -41,3 +44,18 @@ def human_size(size: int) -> str:
             return f"{value:.0f} {unit}" if unit == "B" else f"{value:.1f} {unit}"
         value /= 1024
     return f"{size} B"
+
+
+def url_cache_key(url: str, prefix: str = "media", length: int = 16) -> Path:
+    """Stable cache path for a remote file, unique per URL.
+
+    Images referenced from different books frequently share a filename
+    (``images/cover.jpg``), so the cache key includes a digest of the URL to
+    keep them apart.
+    """
+    parsed = urlparse(url)
+    name = Path(unquote(parsed.path)).name or "file"
+    stem = slugify(Path(name).stem, 40)
+    suffix = Path(name).suffix.lower()
+    digest = sha256(url.encode("utf-8")).hexdigest()[:length]
+    return Path(prefix) / f"{stem}-{digest}{suffix}"
