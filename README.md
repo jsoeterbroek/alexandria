@@ -1,2 +1,2 @@
-# alexandria
-project alexandria - workflow to convert Gutenberg books to personal collection
+# Alexandria
+Project Alexandria - Python workflow using libzim to convert Gutenberg books to personal ZIM collection.
