@@ -108,7 +108,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"wrote {target} ({count} book(s))")
         return 0
 
-    reports, failures, skipped = Workflow(config, refresh=args.refresh, force=args.force).run()
+    # An explicit --only request always rebuilds, even if the ZIM exists.
+    force = args.force or bool(args.only)
+    reports, failures, skipped = Workflow(config, refresh=args.refresh, force=force).run()
 
     for book_id, message in failures:
         print(f"error: #{book_id}: {message}", file=sys.stderr)

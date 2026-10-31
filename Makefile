@@ -19,7 +19,7 @@ build: sync ## Convert missing books in the descriptor (skips existing ZIMs)
 build_all: sync ## Rebuild every book in the descriptor, overwriting existing ZIMs
 	$(UV) run alexandria $(DESCRIPTOR) --force
 
-only: sync ## Build a single book: make only ID=11
+only: sync ## (Re)build a single book: make only ID=11
 	@test -n "$(ID)" || { echo "usage: make only ID=<gutenberg-id>" >&2; exit 2; }
 	$(UV) run alexandria $(DESCRIPTOR) --only $(ID)
 

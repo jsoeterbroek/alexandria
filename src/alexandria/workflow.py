@@ -6,13 +6,13 @@ import tempfile
 from dataclasses import dataclass, replace
 from pathlib import Path
 
+from libzim.reader import Archive
+
 from .config import BookSpec, Config
 from .document import COVER_PATH, parse_book
 from .gutenberg import COVER_URL, fetch_html, fetch_metadata, iso639_3, language_label
 from .library import LIBRARY_NAME, write_library
 from .models import Asset, BookMeta
-from libzim.reader import Archive
-
 from .net import Fetcher
 from .util import human_size, slugify
 from .zim import build_zim

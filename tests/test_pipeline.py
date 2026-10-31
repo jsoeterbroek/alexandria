@@ -19,13 +19,13 @@ from libzim.reader import Archive
 from libzim.search import Query, Searcher
 
 from alexandria.cli import main
-from alexandria.config import ConfigError, load_config
+from alexandria.config import BookSpec, Config, ConfigError, load_config
 from alexandria.document import MAX_ARTICLE_BYTES, parse_book
 from alexandria.gutenberg import GutenbergError, iso639_3, load_rdf
 from alexandria.library import LIBRARY_NAME, LIBRARY_VERSION, write_library
 from alexandria.models import BookMeta
 from alexandria.util import human_size, slugify
-from alexandria.workflow import Workflow
+from alexandria.workflow import BookReport, Workflow
 from alexandria.zim import build_zim
 
 RDF = """<?xml version="1.0" encoding="utf-8"?>
@@ -221,13 +221,14 @@ class CliTest(unittest.TestCase):
             )
             # An explicit --only must override the descriptor's build switch.
             with mock.patch.object(Workflow, "run", autospec=True) as run:
-                run.return_value = ([], [])
+                run.return_value = ([], [], [])
                 with contextlib.redirect_stdout(io.StringIO()):
                     code = main([str(path), "--only", "11"])
             self.assertEqual(code, 0)
             workflow = run.call_args.args[0]
             self.assertEqual([book.book_id for book in workflow.config.books], ["11"])
             self.assertTrue(workflow.config.books[0].build)
+            self.assertTrue(workflow.force, "--only must also override skip-if-built")
 
     def test_list_shows_titles_and_hides_disabled(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -405,6 +406,74 @@ class ZimTest(unittest.TestCase):
         search = Searcher(archive).search(Query().set_query("unicorn"))
         self.assertEqual(search.get_estimated_matches(), 1)
         self.assertEqual([result.path for result in search.get_results(0, 5)], ["chapter/002.html"])
+
+
+class WorkflowSkipTest(unittest.TestCase):
+    """`alexandria build` must not redo work that already exists."""
+
+    def setUp(self) -> None:
+        self.tmp = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        self.output = self.tmp / "output"
+        self.output.mkdir()
+        self.config = Config(
+            books=(BookSpec(book_id="999", title="Zebra Tales"),),
+            output=self.output,
+            cache=self.tmp / "cache",
+            source=self.tmp / "input.yaml",
+        )
+
+    def build_once(self, force: bool = False, prebuild: bool = True):
+        workflow = Workflow(self.config, force=force, log=lambda _message: None)
+        book = parse_book(
+            MODERN_HTML,
+            make_meta(),
+            "https://example.test/book.html",
+            self.tmp,
+            fake_fetch({}),
+        )
+        with mock.patch.object(Workflow, "convert", autospec=True) as convert:
+            convert.return_value = BookReport(
+                book_id="999",
+                title="Testable Tales",
+                output=self.output / "gutenberg-999-testable-tales.zim",
+                pages=len(book.pages),
+                media=0,
+                words=book.word_count,
+                size=1,
+            )
+            if prebuild and not force:
+                build_zim(self.output / "gutenberg-999-testable-tales.zim", book)
+            reports, failures, skipped = workflow.run()
+        return reports, failures, skipped, convert
+
+    def test_existing_archive_is_skipped(self) -> None:
+        reports, failures, skipped, convert = self.build_once()
+        self.assertEqual(reports, [])
+        self.assertEqual(failures, [])
+        self.assertEqual(skipped, ["999"])
+        convert.assert_not_called()
+        self.assertTrue((self.output / "library.xml").is_file())
+
+    def test_force_rebuilds_existing_archive(self) -> None:
+        reports, failures, skipped, convert = self.build_once(force=True)
+        self.assertEqual(skipped, [])
+        convert.assert_called_once()
+
+    def test_unreadable_archive_is_rebuilt(self) -> None:
+        (self.output / "gutenberg-999-broken.zim").write_bytes(b"not a zim")
+        reports, failures, skipped, convert = self.build_once(prebuild=False)
+        self.assertEqual(skipped, [])
+        convert.assert_called_once()
+
+    def test_build_false_is_skipped(self) -> None:
+        config = Config(
+            books=(BookSpec(book_id="999", build=False),),
+            output=self.output,
+            cache=self.tmp / "cache",
+            source=self.tmp / "input.yaml",
+        )
+        reports, failures, skipped = Workflow(config, log=lambda _message: None).run()
+        self.assertEqual((reports, failures, skipped), ([], [], ["999"]))
 
 
 class LibraryTest(unittest.TestCase):

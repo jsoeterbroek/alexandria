@@ -1,16 +1,254 @@
 # Alexandria descriptor: every book listed here is downloaded from Project
 # Gutenberg and converted into a ZIM file in `output/`.
 #
-# Optional per-book keys:
-#   title:    override the RDF title
-#   language: override the RDF language (ISO 639-1/639-3)
-#   html:     use a local HTML file instead of downloading the ebook
-#   rdf:      use a local RDF metadata file instead of downloading it
+# Per-book keys:
+#   id        Gutenberg ebook number (required)
+#   title     display title; shown by `make list` and used as the ZIM title
+#   language  override the RDF language (ISO 639-1 or 639-3)
+#   html      use a local HTML file instead of downloading the ebook
+#   rdf       use a local RDF metadata file instead of downloading it
+#   build     false keeps the entry but skips it (default true)
+#
+# Books are sorted by id so new entries are easy to place by hand.
+# Titles come from input/top_100.txt; comments show the top-100 rank.
 
 output: output
 cache: cache
 
 books:
-  - id: 28054
+  - id: 10
+    title: "The King James Version of the Bible"  # top-100 #59
+    build: false
   - id: 11
+    title: "Alice's Adventures in Wonderland"  # top-100 #4
+  - id: 12
+    title: "Through the Looking-Glass"  # top-100 #99
+  - id: 16
+    title: "Peter Pan"  # top-100 #73
+  - id: 23
+    title: "Narrative of the Life of Frederick Douglass, an American Slave"  # top-100 #57
+    build: false
+  - id: 35
+    title: "The Time Machine"  # top-100 #55
+  - id: 36
+    title: "The war of the worlds"  # top-100 #78
+  - id: 41
+    title: "The Legend of Sleepy Hollow"  # top-100 #23
+  - id: 43
+    title: "The strange case of Dr. Jekyll and Mr. Hyde"  # top-100 #13
+  - id: 45
+    title: "Anne of Green Gables"  # top-100 #48
+    build: false
+  - id: 46
+    title: "A Christmas Carol in Prose; Being a Ghost Story of Christmas"  # top-100 #40
+  - id: 55
+    title: "The Wonderful Wizard of Oz"  # top-100 #38
+  - id: 74
+    title: "The Adventures of Tom Sawyer, Complete"  # top-100 #27
+    build: false
+  - id: 76
+    title: "Adventures of Huckleberry Finn"  # top-100 #41
+    build: false
+  - id: 84
+    title: "Frankenstein; or, The modern Prometheus"  # top-100 #2
+  - id: 98
+    title: "A Tale of Two Cities"  # top-100 #11
+  - id: 100
+    title: "The Complete Works of William Shakespeare"  # top-100 #8
+    build: false
+  - id: 120
+    title: "Treasure Island"  # top-100 #44
+  - id: 132
+    title: "The Art of War"  # top-100 #74
+  - id: 135
+    title: "Les Misérables"  # top-100 #80
+  - id: 145
+    title: "Middlemarch"  # top-100 #10
+    build: false
+  - id: 158
+    title: "Emma"  # top-100 #63
+    build: false
+  - id: 161
+    title: "Sense and Sensibility"  # top-100 #53
+  - id: 174
+    title: "The Picture of Dorian Gray"  # top-100 #12
+  - id: 205
+    title: "Walden, and On The Duty Of Civil Disobedience"  # top-100 #25
+  - id: 219
+    title: "Heart of Darkness"  # top-100 #70
+  - id: 244
+    title: "A Study in Scarlet"  # top-100 #82
+  - id: 345
+    title: "Dracula"  # top-100 #6
+  - id: 394
+    title: "Cranford"  # top-100 #39
+    build: false
+  - id: 408
+    title: "The Souls of Black Folk"  # top-100 #67
+    build: false
+  - id: 514
+    title: "Little Women"  # top-100 #66
+    build: false
+  - id: 768
+    title: "Wuthering Heights"  # top-100 #32
+  - id: 829
+    title: "Gulliver's Travels into Several Remote Nations of the World"  # top-100 #90
+  - id: 844
+    title: "The Importance of Being Earnest: A Trivial Comedy for Serious People"  # top-100 #34
+  - id: 996
+    title: "Don Quixote"  # top-100 #89
+  - id: 1080
+    title: "A Modest Proposal"  # top-100 #31
+  - id: 1184
+    title: "The Count of Monte Cristo"  # top-100 #22
+  - id: 1228
+    title: "On the Origin of Species By Means of Natural Selection"  # top-100 #79
+  - id: 1232
+    title: "The Prince"  # top-100 #17
+  - id: 1259
+    title: "Twenty years after"  # top-100 #45
+  - id: 1260
+    title: "Jane Eyre: An Autobiography"  # top-100 #14
+    build: false
   - id: 1342
+    title: "Pride and Prejudice"  # top-100 #1
+  - id: 1399
+    title: "Anna Karenina"  # top-100 #92
+  - id: 1400
+    title: "Great Expectations"  # top-100 #24
+  - id: 1497
+    title: "The Republic"  # top-100 #61
+  - id: 1513
+    title: "Romeo and Juliet"  # top-100 #9
+  - id: 1661
+    title: "The Adventures of Sherlock Holmes"  # top-100 #5
+  - id: 1727
+    title: "The Odyssey"  # top-100 #30
+  - id: 1952
+    title: "The Yellow Wallpaper"  # top-100 #21
+    build: false
+  - id: 1998
+    title: "Thus Spake Zarathustra: A Book for All and None"  # top-100 #65
+  - id: 2000
+    title: "Don Quijote"  # top-100 #95
+  - id: 2148
+    title: "The Works of Edgar Allan Poe — Volume 2"  # top-100 #86
+  - id: 2160
+    title: "The Expedition of Humphry Clinker"  # top-100 #46
+    build: false
+  - id: 2542
+    title: "A Doll's House : a play"  # top-100 #54
+    build: false
+  - id: 2554
+    title: "Crime and Punishment"  # top-100 #15
+  - id: 2591
+    title: "Grimms' Fairy Tales"  # top-100 #50
+  - id: 2600
+    title: "War and Peace"  # top-100 #28
+  - id: 2641
+    title: "A Room with a View"  # top-100 #18
+  - id: 2680
+    title: "Meditations"  # top-100 #20
+  - id: 2701
+    title: "Moby Dick; Or, The Whale"  # top-100 #3
+  - id: 2814
+    title: "Dubliners"  # top-100 #98
+  - id: 2852
+    title: "The Hound of the Baskervilles"  # top-100 #81
+  - id: 3207
+    title: "Leviathan"  # top-100 #33
+  - id: 3296
+    title: "The Confessions of St. Augustine"  # top-100 #58
+  - id: 3300
+    title: "An Inquiry into the Nature and Causes of the Wealth of Nations"  # top-100 #76
+  - id: 4085
+    title: "The Adventures of Roderick Random"  # top-100 #52
+    build: false
+  - id: 4300
+    title: "Ulysses"  # top-100 #56
+  - id: 4363
+    title: "Beyond Good and Evil"  # top-100 #68
+  - id: 5197
+    title: "My Life — Volume 1"  # top-100 #49
+    build: false
+  - id: 5200
+    title: "Metamorphosis"  # top-100 #19
+  - id: 5740
+    title: "Tractatus Logico-Philosophicus"  # top-100 #75
+  - id: 6593
+    title: "History of Tom Jones, a Foundling"  # top-100 #42
+    build: false
+  - id: 6761
+    title: "The Adventures of Ferdinand Count Fathom — Complete"  # top-100 #47
+    build: false
+  - id: 7370
+    title: "Second Treatise of Government"  # top-100 #62
+    build: false
+  - id: 8492
+    title: "The King in Yellow"  # top-100 #60
+    build: false
+  - id: 8800
+    title: "The divine comedy"  # top-100 #97
+  - id: 10007
+    title: "Carmilla"  # top-100 #94
+    build: false
+  - id: 16328
+    title: "Beowulf: An Anglo-Saxon Epic Poem"  # top-100 #43
+  - id: 16389
+    title: "The Enchanted April"  # top-100 #35
+    build: false
+  - id: 20203
+    title: "Autobiography of Benjamin Franklin"  # top-100 #77
+    build: false
+  - id: 20738
+    title: "Diccionario Ingles-Español-Tagalog"  # top-100 #96
+    build: false
+  - id: 25344
+    title: "The Scarlet Letter"  # top-100 #36
+  - id: 26471
+    title: "Spoon River Anthology"  # top-100 #71
+    build: false
+  - id: 27827
+    title: "The Kama Sutra of Vatsyayana"  # top-100 #85
+  - id: 28054
+    title: "The Brothers Karamazov"  # top-100 #69
+  - id: 33283
+    title: "Calculus Made Easy"  # top-100 #93
+    build: false
+  - id: 34901
+    title: "On Liberty"  # top-100 #72
+  - id: 36034
+    title: "White nights, and other stories"  # top-100 #91
+  - id: 37106
+    title: "Little Women; Or, Meg, Jo, Beth, and Amy"  # top-100 #26
+  - id: 37683
+    title: "Chambers's Twentieth Century Dictionary (part 1 of 4: A-D)"  # top-100 #7
+    build: false
+  - id: 41445
+    title: "Frankenstein; or, The modern Prometheus"  # top-100 #83
+    build: false
+  - id: 42324
+    title: "Frankenstein; or, The modern Prometheus"  # top-100 #100
+    build: false
+  - id: 45188
+    title: "The International Development of China"  # top-100 #84
+    build: false
+  - id: 49008
+    title: "The Works of William Shakespeare [Cambridge Edition] [Vol. 8 of 9]"  # top-100 #37
+    build: false
+  - id: 49297
+    build: false
+    title: "The Works of William Shakespeare [Cambridge Edition] [Vol. 5 of 9]"  # top-100 #51
+  - id: 61985
+    title: "Harrods for Everything"  # top-100 #64
+    build: false
+  - id: 62383
+    title: "A Biblia Sagrada, Contendo o Velho e o Novo Testamento"  # top-100 #87
+    build: false
+  - id: 64317
+    title: "The Great Gatsby"  # top-100 #16
+  - id: 67098
+    title: "Winnie-the-Pooh"  # top-100 #88
+  - id: 67979
+    title: "The Blue Castle: a novel"  # top-100 #29
+    build: false

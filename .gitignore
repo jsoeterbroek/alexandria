@@ -218,3 +218,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Alexandria
+/output/
+/cache/
+/input/top_100.txt
