@@ -7,6 +7,7 @@
 #   language  override the RDF language (ISO 639-1 or 639-3)
 #   html      use a local HTML file instead of downloading the ebook
 #   rdf       use a local RDF metadata file instead of downloading it
+#   modernize rewrite archaic English into modern English (default false)
 #   build     false keeps the entry but skips it (default true)
 #
 # Books are sorted by id so new entries are easy to place by hand.
@@ -133,8 +134,16 @@ books:
     title: "Thus Spake Zarathustra: A Book for All and None"  # top-100 #65
   - id: 2000
     title: "Don Quijote"  # top-100 #95
+  - id: 2147
+    title: "The Works of Edgar Allan Poe — Volume 1"
   - id: 2148
     title: "The Works of Edgar Allan Poe — Volume 2"  # top-100 #86
+  - id: 2149
+    title: "The Works of Edgar Allan Poe — Volume 3"
+  - id: 2150
+    title: "The Works of Edgar Allan Poe — Volume 4"
+  - id: 2151
+    title: "The Works of Edgar Allan Poe — Volume 5"
   - id: 2160
     title: "The Expedition of Humphry Clinker"  # top-100 #46
     build: false
@@ -171,24 +180,34 @@ books:
     title: "An Inquiry into the Nature and Causes of the Wealth of Nations"  # top-100 #76
   - id: 3435
     title: "The Book of the Thousand Nights and a Night — Volume 01 (of 10) by Burton"
+    modernize: true
   - id: 3436
     title: "The Book of the Thousand Nights and a Night — Volume 02 (of 10) by Burton"
+    modernize: true
   - id: 3437
     title: "The Book of the Thousand Nights and a Night — Volume 03 (of 10) by Burton"
+    modernize: true
   - id: 3438
     title: "The Book of the Thousand Nights and a Night — Volume 04 (of 10) by Burton"
+    modernize: true
   - id: 3439
     title: "The Book of the Thousand Nights and a Night — Volume 05 (of 10) by Burton"
+    modernize: true
   - id: 3440
     title: "The Book of the Thousand Nights and a Night — Volume 06 (of 10) by Burton"
+    modernize: true
   - id: 3441
     title: "The Book of the Thousand Nights and a Night — Volume 07 (of 10) by Burton"
+    modernize: true
   - id: 3442
     title: "The Book of the Thousand Nights and a Night — Volume 08 (of 10) by Burton"
+    modernize: true
   - id: 3443
     title: "The Book of the Thousand Nights and a Night — Volume 09 (of 10) by Burton"
+    modernize: true
   - id: 3444
     title: "The Book of the Thousand Nights and a Night — Volume 10 (of 10) by Burton"
+    modernize: true
   - id: 4085
     title: "The Adventures of Roderick Random"  # top-100 #52
     build: false

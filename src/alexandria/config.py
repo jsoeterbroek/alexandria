@@ -10,6 +10,9 @@ up in the local ZIM collection::
       - id: 28054
         title: The Brothers Karamazov
 
+``modernize: true`` rewrites archaic English ("thou knowest", "he cometh",
+"quoth", "hath") into present-day English before the book is split and packed.
+
 An entry may also point at local files instead of the network::
 
     - id: 1342
@@ -39,6 +42,7 @@ class BookSpec:
     html: Path | None = None
     rdf: Path | None = None
     language: str | None = None
+    modernize: bool = False
     build: bool = True
 
 
@@ -74,7 +78,10 @@ def _book_spec(raw: Any, index: int) -> BookSpec:
 
     title = raw.get("title")
     language = raw.get("language")
+    modernize = raw.get("modernize", False)
     build = raw.get("build", True)
+    if not isinstance(modernize, bool):
+        raise ConfigError(f"book #{index + 1}: 'modernize' must be true or false, got {modernize!r}")
     if not isinstance(build, bool):
         raise ConfigError(f"book #{index + 1}: 'build' must be true or false, got {build!r}")
     return BookSpec(
@@ -83,6 +90,7 @@ def _book_spec(raw: Any, index: int) -> BookSpec:
         html=optional_path("html"),
         rdf=optional_path("rdf"),
         language=str(language).strip() if language else None,
+        modernize=modernize,
         build=build,
     )
 

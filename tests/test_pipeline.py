@@ -19,9 +19,11 @@ from pathlib import Path
 from unittest import mock
 from xml.etree import ElementTree as ET
 
+from bs4 import BeautifulSoup
 from libzim.reader import Archive
 from libzim.search import Query, Searcher
 
+from alexandria.archaic import modernize_soup, modernize_text
 from alexandria.archive import open_archive
 from alexandria.cli import main
 from alexandria.config import BookSpec, Config, ConfigError, load_config
@@ -199,6 +201,23 @@ class ConfigTest(unittest.TestCase):
             with self.assertRaises(ConfigError):
                 load_config(path)
 
+    def test_modernize_flag(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "input.yaml"
+            path.write_text(
+                "books:\n  - id: 11\n  - id: 3435\n    modernize: true\n",
+                encoding="utf-8",
+            )
+            config = load_config(path)
+        self.assertEqual([book.modernize for book in config.books], [False, True])
+
+    def test_non_boolean_modernize_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "input.yaml"
+            path.write_text("books:\n  - id: 11\n    modernize: maybe\n", encoding="utf-8")
+            with self.assertRaises(ConfigError):
+                load_config(path)
+
     def test_build_flag(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "input.yaml"
@@ -258,6 +277,53 @@ class CliTest(unittest.TestCase):
         self.assertEqual(lines[0], "11    Alice's Adventures in Wonderland")
         self.assertEqual(lines[1], "1342")
         self.assertNotIn("Frankenstein", output.getvalue())
+
+
+class ArchaicTest(unittest.TestCase):
+    """Archaic English is rewritten without damaging modern lookalikes."""
+
+    def test_pronouns_and_verbs(self) -> None:
+        self.assertEqual(modernize_text("thou knowest that I love thee"), "you know that I love you")
+        self.assertEqual(modernize_text("Knowest thou not?"), "Know you not?")
+        self.assertEqual(modernize_text("thou art welcome, thou hast much"), "you are welcome, you have much")
+        self.assertEqual(modernize_text("so shalt thou witness it"), "so shall you witness it")
+        self.assertEqual(modernize_text("as thou wilt"), "as you will")
+        self.assertEqual(modernize_text("thy wife and thine eyes"), "your wife and your eyes")
+
+    def test_third_person_inflections(self) -> None:
+        self.assertEqual(modernize_text("he cometh and goeth"), "he comes and goes")
+        self.assertEqual(modernize_text("the old saw lieth not"), "the old saw lies not")
+        self.assertEqual(modernize_text("what aileth thee?"), "what ails you?")
+        self.assertEqual(modernize_text("she kisseth his hand"), "she kisses his hand")
+
+    def test_archaic_vocabulary(self) -> None:
+        self.assertEqual(modernize_text("quoth he"), "said he")
+        self.assertEqual(modernize_text("in very sooth"), "in truth")
+        self.assertEqual(modernize_text("naught availed her aught"), "nothing availed her anything")
+        self.assertEqual(modernize_text("whither goest thou?"), "where go you?")
+
+    def test_modern_lookalikes_survive(self) -> None:
+        self.assertEqual(modernize_text("the best guest in the west"), "the best guest in the west")
+        self.assertEqual(modernize_text("the fairest of women"), "the fairest of women")
+        self.assertEqual(modernize_text("the art of war; flowers wilt"), "the art of war; flowers wilt")
+        self.assertEqual(modernize_text("we wrought iron"), "we wrought iron")
+        self.assertEqual(modernize_text("the money is mine"), "the money is mine")
+        self.assertEqual(modernize_text("his teeth and the twentieth night"), "his teeth and the twentieth night")
+
+    def test_markup_is_untouched_but_split_words_are_joined(self) -> None:
+        soup = BeautifulSoup('<p>thou <i>knowest</i> me, <a href="thou.html">thee</a></p>', "html.parser")
+        modernize_soup(soup)
+        self.assertEqual(str(soup), '<p>you <i>know</i> me, <a href="thou.html">you</a></p>')
+
+    def test_parse_book_modernizes_only_when_asked(self) -> None:
+        html = "<html><body><h1>Book</h1><h2>CHAPTER I.</h2><p>Thou knowest that he cometh.</p></body></html>"
+        media_dir = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        plain = parse_book(html, make_meta(), "https://example.test/book.html", media_dir, fake_fetch({}))
+        modern = parse_book(
+            html, make_meta(), "https://example.test/book.html", media_dir, fake_fetch({}), modernize=True
+        )
+        self.assertIn("Thou knowest", " ".join(page.body for page in plain.pages))
+        self.assertIn("You know that he comes", " ".join(page.body for page in modern.pages))
 
 
 class ParsingTest(unittest.TestCase):

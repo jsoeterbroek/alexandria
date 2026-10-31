@@ -105,7 +105,15 @@ class Workflow:
         with tempfile.TemporaryDirectory(prefix=f"alexandria-{spec.book_id}-") as workdir:
             media_dir = Path(workdir)
             cover = self._cover(spec, media_dir)
-            book = parse_book(document, meta, source_url, media_dir, self.fetcher.fetch_bytes, cover)
+            book = parse_book(
+                document,
+                meta,
+                source_url,
+                media_dir,
+                self.fetcher.fetch_bytes,
+                cover,
+                modernize=spec.modernize,
+            )
             target = self.config.output / zim_filename(spec.book_id, meta.title)
             self.log(f"[{spec.book_id}] building {target.name} ({book.section_count} sections)")
             result = build_zim(target, book)

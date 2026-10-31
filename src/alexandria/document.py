@@ -25,6 +25,7 @@ from urllib.parse import unquote, urljoin, urlparse
 from bs4 import BeautifulSoup, Tag
 from PIL import Image, ImageOps
 
+from .archaic import modernize_soup
 from .models import Asset, BookMeta, Page, TocEntry
 from .util import url_cache_key
 
@@ -143,15 +144,19 @@ def parse_book(
     media_dir: Path,
     fetch,
     cover: Asset | None = None,
+    modernize: bool = False,
 ) -> ParsedBook:
     """Parse Gutenberg HTML into pages, media and a table of contents.
 
     ``fetch(url, cache_key)`` returns bytes and raises on failure; images that
     cannot be downloaded are dropped instead of breaking the build. ``cover``
     is the ebook cover, stored under :data:`COVER_PATH` and reused when the book
-    HTML references the same image.
+    HTML references the same image. ``modernize`` rewrites archaic English
+    ("thou knowest", "he cometh", "quoth") into present-day English.
     """
     soup = BeautifulSoup(document, "html.parser")
+    if modernize:
+        modernize_soup(soup)
     for tag in soup.find_all(["script", "noscript"]):
         tag.decompose()
 

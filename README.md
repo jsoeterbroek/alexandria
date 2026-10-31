@@ -54,6 +54,7 @@ Each entry accepts optional keys:
 | `id`       | Gutenberg ebook number (required)                                            |
 | `title`    | Display title; used by `make list` and as the archive title (RDF when absent) |
 | `language` | Replace the RDF language (ISO 639-1 or 639-3)                                 |
+| `modernize`| Rewrite archaic English ("thou knowest", "quoth") into modern English (default `false`) |
 | `html`     | Use a local HTML file instead of downloading the ebook                       |
 | `rdf`      | Use a local RDF metadata file instead of downloading it                       |
 | `build`    | `false` keeps the entry in the file but skips it (default `true`)             |
@@ -68,6 +69,37 @@ Each entry accepts optional keys:
 
 `make list` prints `id  title` for every buildable entry, using the descriptor
 titles only — no network lookup.
+
+### Modern English
+
+Some Gutenberg texts are written in archaic English — Burton's *Thousand
+Nights and a Night* alone has thousands of "thou", "thee", "hath", "quoth",
+"cometh" and "-est" verbs. Set `modernize: true` on such an entry and
+`alexandria/archaic.py` rewrites the prose before the book is split:
+
+```yaml
+  - id: 3435
+    title: "The Book of the Thousand Nights and a Night — Volume 01 (of 10)"
+    modernize: true
+```
+
+The rewrite is rule-based and deterministic, not a machine translation:
+
+- pronouns and agreement — `thou knowest` → `you know`, `knowest thou` →
+  `know you`, `thou art` → `you are`, `thy`/`thine` → `your`;
+- verbs — `he cometh` → `he comes`, `she kisseth` → `she kisses`;
+- auxiliaries and function words — `hath` → `has`, `dost` → `do`, `shalt` →
+  `shall`, `quoth` → `said`, `verily` → `truly`, `aught`/`naught` →
+  `anything`/`nothing`, `whither` → `where`, `ere` → `before`, `whilst` →
+  `while`;
+- phrases — `in very sooth` → `in truth`, `good morrow` → `good morning`,
+  `bade him adieu` → `said adieu to him`.
+
+Verb stems are validated against the words the book actually uses, so modern
+lookalikes stay put: `the best guest`, `his teeth`, `the twentieth night`, `the
+fairest of women`, `the art of war`, `flowers wilt`, `we wrought iron`,
+`the money is mine`. Markup, attributes, links and proper names are untouched;
+only text nodes change. Spelling and dialect stay as printed.
 
 `--only ID` (and `make only ID=…`) always builds that book: it overrides both
 `build: false` and the skip-if-already-built rule.
@@ -159,6 +191,7 @@ Unreadable files are skipped rather than aborting the write.
 | `alexandria/gutenberg.py`   | RDF metadata, edition discovery, cover lookup        |
 | `alexandria/net.py`         | Cached HTTP fetching with retries                   |
 | `alexandria/document.py`    | Gutenberg HTML → pages, media, table of contents    |
+| `alexandria/archaic.py`     | Archaic English → modern English rewrite            |
 | `alexandria/zim.py`         | libzim writing, metadata, verification              |
 | `alexandria/archive.py`     | Reading ZIMs without libzim's stray stderr notices  |
 | `alexandria/formats.py`     | PDF/TeX editions converted to parseable HTML         |
