@@ -169,6 +169,26 @@ books:
     title: "The Confessions of St. Augustine"  # top-100 #58
   - id: 3300
     title: "An Inquiry into the Nature and Causes of the Wealth of Nations"  # top-100 #76
+  - id: 3435
+    title: "The Book of the Thousand Nights and a Night — Volume 01 (of 10) by Burton"
+  - id: 3436
+    title: "The Book of the Thousand Nights and a Night — Volume 02 (of 10) by Burton"
+  - id: 3437
+    title: "The Book of the Thousand Nights and a Night — Volume 03 (of 10) by Burton"
+  - id: 3438
+    title: "The Book of the Thousand Nights and a Night — Volume 04 (of 10) by Burton"
+  - id: 3439
+    title: "The Book of the Thousand Nights and a Night — Volume 05 (of 10) by Burton"
+  - id: 3440
+    title: "The Book of the Thousand Nights and a Night — Volume 06 (of 10) by Burton"
+  - id: 3441
+    title: "The Book of the Thousand Nights and a Night — Volume 07 (of 10) by Burton"
+  - id: 3442
+    title: "The Book of the Thousand Nights and a Night — Volume 08 (of 10) by Burton"
+  - id: 3443
+    title: "The Book of the Thousand Nights and a Night — Volume 09 (of 10) by Burton"
+  - id: 3444
+    title: "The Book of the Thousand Nights and a Night — Volume 10 (of 10) by Burton"
   - id: 4085
     title: "The Adventures of Roderick Random"  # top-100 #52
     build: false
@@ -181,6 +201,8 @@ books:
     build: false
   - id: 5200
     title: "Metamorphosis"  # top-100 #19
+  - id: 5658
+    title: "Lord Jim by Joseph Conrad"
   - id: 5740
     title: "Tractatus Logico-Philosophicus"  # top-100 #75
   - id: 6400
