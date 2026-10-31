@@ -17,6 +17,8 @@ from xml.etree import ElementTree as ET
 
 from libzim.reader import Archive
 
+from .archive import open_archive
+
 LIBRARY_NAME = "library.xml"
 LIBRARY_VERSION = "20110515"
 FAVICON_SIZE = 48
@@ -35,7 +37,7 @@ def write_library(path: Path, zim_paths: list[Path]) -> int:
         if not zim.is_file():
             continue
         try:
-            archive = Archive(zim)
+            archive = open_archive(zim)
         except Exception:  # noqa: BLE001 - a corrupt file must not break the library
             continue
         attributes = _book_attributes(archive, zim, path.parent)

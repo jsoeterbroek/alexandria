@@ -98,10 +98,20 @@ and title indexes are built with the book's ISO 639-3 language. Each book's own
 cover is stored as a ZIM illustration at 192 px plus a 48 px favicon, which
 Kiwix uses in its catalogue.
 
+Xapian has no stemmer for some languages (Latin, Ancient Greek, Hebrew, and
+other classical or liturgical languages). Those archives are indexed unstemmed:
+exact words are searchable, inflected forms are not conflated, and libzim's
+"No stemming for language" notice is suppressed by
+`alexandria/archive.py` when the archive is reopened for verification, library
+generation and rebuild decisions.
+
 Downloads are cached per URL (`cache/media/<name>-<digest>.<ext>`): Gutenberg
 reuses filenames such as `images/cover.jpg` across books, so a filename-only
 cache would hand one book another book's cover. Covers fall back to
-`pg<id>.cover.medium.jpg` when `images/cover.jpg` does not exist.
+`pg<id>.cover.medium.jpg` when `images/cover.jpg` does not exist. Cache files
+are written via rename, and a book's images are fetched eight at a time —
+illustrated titles such as *Calculus Made Easy* (#33283, 2 341 figures) would
+otherwise spend minutes downloading one connection at a time.
 
 Some ebooks have no HTML edition at all — Tractatus Logico-Philosophicus
 (#5740) ships only as PDF and LaTeX. Those are converted to HTML by
@@ -150,6 +160,7 @@ Unreadable files are skipped rather than aborting the write.
 | `alexandria/net.py`         | Cached HTTP fetching with retries                   |
 | `alexandria/document.py`    | Gutenberg HTML → pages, media, table of contents    |
 | `alexandria/zim.py`         | libzim writing, metadata, verification              |
+| `alexandria/archive.py`     | Reading ZIMs without libzim's stray stderr notices  |
 | `alexandria/formats.py`     | PDF/TeX editions converted to parseable HTML         |
 | `alexandria/library.py`     | Kiwix `library.xml` generation                       |
 | `alexandria/workflow.py`    | Per-book orchestration and error isolation          |

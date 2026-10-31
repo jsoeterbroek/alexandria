@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -40,7 +42,12 @@ class Fetcher:
                 if not payload:
                     raise FetchError(f"empty response from {url}")
                 target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_bytes(payload)
+                # Write beside the target and rename so an interrupted build
+                # (or a concurrent worker) never leaves a truncated cache file
+                # that later runs would treat as a complete download.
+                partial = target.with_name(f"{target.name}.{os.getpid()}.{threading.get_ident()}.part")
+                partial.write_bytes(payload)
+                partial.replace(target)
                 return target
             except (urllib.error.URLError, TimeoutError, OSError, FetchError) as exc:
                 last_error = exc

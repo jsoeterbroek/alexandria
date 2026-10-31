@@ -5,9 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from libzim.reader import Archive
 from libzim.writer import Creator, FileProvider, Hint, Item, StringProvider
 
+from .archive import open_archive
 from .document import ParsedBook
 from .models import Asset, Page
 
@@ -133,7 +133,7 @@ def _add_metadata(creator: Creator, book: ParsedBook) -> None:
 
 def verify_zim(path: Path, main_path: str | None = None) -> None:
     """Reopen the archive and check its integrity, main entry and links."""
-    archive = Archive(path)
+    archive = open_archive(path)
     if not archive.has_main_entry:
         raise RuntimeError(f"{path.name}: archive has no main entry")
     if main_path is not None and archive.main_entry.path != main_path and not archive.main_entry.is_redirect:

@@ -16,6 +16,7 @@ from __future__ import annotations
 import html as html_lib
 import posixpath
 import re
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from io import BytesIO
 from pathlib import Path
@@ -63,6 +64,10 @@ MAX_ARTICLE_BYTES = 256 * 1024
 # Chrome (head, nav, footer) added around every article; chunking keeps the
 # rendered page within MAX_ARTICLE_BYTES by budgeting for it.
 _PAGE_CHROME_BYTES = 2 * 1024
+
+# Concurrent downloads per book. Illustrated ebooks reference thousands of
+# images; fetching them serially takes minutes per book.
+_IMAGE_WORKERS = 8
 
 _IMAGE_SUFFIXES = {
     ".jpg": "image/jpeg",
@@ -220,7 +225,9 @@ def _content_nodes(soup: BeautifulSoup) -> list[Tag]:
 
     selected: list[Tag] = []
     for node in nodes[start:end]:
-        if "pg_body_wrapper" in (node.get("class") or []):
+        # Gutenberg wraps page markers ("[Pg 111]") in these divs, but the same
+        # wrapper also holds display math in image form. Only drop text-only ones.
+        if "pg_body_wrapper" in (node.get("class") or []) and not node.find("img"):
             continue
         text = node.get_text(" ", strip=True).upper()
         if node.name in _HEADINGS and "PROJECT GUTENBERG" in text and "LICENSE" in text:
@@ -531,6 +538,7 @@ def _rewrite(
     seen: dict[str, str],
 ) -> list[Asset]:
     assets: dict[str, Asset] = {}
+    prefetched = _prefetch_images(sections, source_url, media_dir, fetch, seen)
     # Images first: links that wrap a figure must point at the stored copy.
     image_targets: dict[str, str] = {}
     for section in sections:
@@ -541,7 +549,7 @@ def _rewrite(
                     image.decompose()
                     continue
                 url = urljoin(source_url, source)
-                asset = _fetch_image(url, media_dir, fetch, seen)
+                asset = _fetch_image(url, media_dir, seen, prefetched)
                 if asset is None:
                     image.decompose()
                     continue
@@ -586,7 +594,80 @@ def _relative(target: str, current: str) -> str:
     return posixpath.relpath(target, posixpath.dirname(current) or ".")
 
 
-def _fetch_image(url: str, media_dir: Path, fetch, seen: dict[str, str]) -> Asset | None:
+def _image_urls(sections: list[Section], source_url: str) -> list[str]:
+    """Every image URL in document order, de-duplicated."""
+    urls: dict[str, None] = {}
+    for section in sections:
+        for node in section.nodes:
+            for image in node.find_all("img"):
+                source = image.get("src")
+                if not source:
+                    continue
+                url = urljoin(source_url, source)
+                parsed = urlparse(url)
+                if Path(unquote(parsed.path)).suffix.lower() in _IMAGE_SUFFIXES:
+                    urls[url] = None
+    return list(urls)
+
+
+def _prefetch_images(
+    sections: list[Section], source_url: str, media_dir: Path, fetch, seen: dict[str, str]
+) -> dict[str, Asset]:
+    """Download every referenced image concurrently, returning ready assets.
+
+    Illustrated ebooks reference thousands of images; fetching them one at a
+    time dominates the build. Each worker stores its own payload, so peak memory
+    stays at one image per worker instead of the whole book. Failures are
+    omitted from the result and the rewriting pass drops those images.
+    """
+    # Several URLs can share a basename (and therefore a zim path). Only the
+    # first claimant is fetched up front, so concurrent workers never write the
+    # same file; the rest are fallbacks when that download fails.
+    claimants: dict[str, list[str]] = {}
+    for url in _image_urls(sections, source_url):
+        zim_path = _zim_path_for(url)
+        if zim_path is not None and zim_path not in seen and zim_path not in claimants:
+            claimants[zim_path] = [url]
+        elif zim_path in claimants and url not in claimants[zim_path]:
+            claimants[zim_path].append(url)
+
+    def download(item: tuple[str, list[str]]) -> tuple[str, Asset | None]:
+        for url in item[1]:
+            asset = _store_image(url, media_dir, fetch)
+            if asset is not None:
+                return item[0], asset
+        return item[0], None
+
+    if not claimants:
+        return {}
+    with ThreadPoolExecutor(max_workers=_IMAGE_WORKERS) as pool:
+        results = pool.map(download, claimants.items())
+        return {asset.url: asset for _zim_path, asset in results if asset is not None}
+
+
+def _zim_path_for(url: str) -> str | None:
+    name = Path(unquote(urlparse(url).path)).name
+    if not name or Path(name).suffix.lower() not in _IMAGE_SUFFIXES:
+        return None
+    return "media/" + _safe_name(name)
+
+
+def _store_image(url: str, media_dir: Path, fetch) -> Asset | None:
+    """Download ``url`` and write it to its media path, one file per call."""
+    zim_path = _zim_path_for(url)
+    if zim_path is None:
+        return None
+    try:
+        payload = fetch(url, url_cache_key(url))
+    except Exception:  # noqa: BLE001 - optional media must not fail the build
+        return None
+    destination = media_dir / zim_path.removeprefix("media/")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_bytes(payload)
+    return Asset(url=url, zim_path=zim_path, mimetype=_IMAGE_SUFFIXES[destination.suffix], filepath=destination)
+
+
+def _fetch_image(url: str, media_dir: Path, seen: dict[str, str], prefetched: dict[str, Asset]) -> Asset | None:
     parsed = urlparse(url)
     name = Path(unquote(parsed.path)).name
     suffix = Path(name).suffix.lower()
@@ -606,15 +687,11 @@ def _fetch_image(url: str, media_dir: Path, fetch, seen: dict[str, str]) -> Asse
             )
         )
 
-    try:
-        payload = fetch(url, url_cache_key(url))
-    except Exception:  # noqa: BLE001 - optional media must not fail the build
+    asset = prefetched.get(url)
+    if asset is None:
         return None
-    target = media_dir / zim_path.removeprefix("media/")
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_bytes(payload)
     seen[zim_path] = url
-    return Asset(url=url, zim_path=zim_path, mimetype=_IMAGE_SUFFIXES[suffix], filepath=target)
+    return asset
 
 
 def _safe_name(name: str) -> str:

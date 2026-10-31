@@ -6,8 +6,7 @@ import tempfile
 from dataclasses import dataclass, replace
 from pathlib import Path
 
-from libzim.reader import Archive
-
+from .archive import open_archive
 from .config import BookSpec, Config
 from .document import COVER_PATH, parse_book
 from .gutenberg import COVER_FALLBACK_URL, COVER_URL, fetch_html, fetch_metadata, iso639_3, language_label
@@ -82,7 +81,7 @@ class Workflow:
         """Return the existing, readable ZIM for ``spec`` if there is one."""
         for candidate in sorted(self.config.output.glob(f"gutenberg-{spec.book_id}-*.zim")):
             try:
-                Archive(candidate)
+                open_archive(candidate)
             except Exception:  # noqa: BLE001 - an unreadable file is rebuilt
                 continue
             return candidate

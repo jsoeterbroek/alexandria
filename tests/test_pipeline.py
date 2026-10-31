@@ -7,9 +7,13 @@ from __future__ import annotations
 
 import contextlib
 import io
+import os
 import posixpath
 import re
+import sys
 import tempfile
+import threading
+import time
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -18,6 +22,7 @@ from xml.etree import ElementTree as ET
 from libzim.reader import Archive
 from libzim.search import Query, Searcher
 
+from alexandria.archive import open_archive
 from alexandria.cli import main
 from alexandria.config import BookSpec, Config, ConfigError, load_config
 from alexandria.document import MAX_ARTICLE_BYTES, parse_book
@@ -324,6 +329,67 @@ class ParsingTest(unittest.TestCase):
         self.assertNotIn("<img", chapter.body)
         self.assertEqual(book.assets, [])
 
+    def test_images_are_downloaded_concurrently(self) -> None:
+        """Illustrated books reference thousands of images; fetches must overlap."""
+        html = (
+            "<html><body><h1>Many Figures</h1>"
+            + "".join(f'<div class="chapter"><h2>Chapter {n}</h2><img src="images/{n}.png"></div>' for n in range(16))
+            + "</body></html>"
+        )
+        lock = threading.Lock()
+        state = {"active": 0, "peak": 0}
+
+        def fetch(_url: str, _key: Path) -> bytes:
+            with lock:
+                state["active"] += 1
+                state["peak"] = max(state["peak"], state["active"])
+            try:
+                time.sleep(0.02)
+                return PNG
+            finally:
+                with lock:
+                    state["active"] -= 1
+
+        media_dir = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        book = parse_book(html, make_meta(), "https://example.test/book.html", media_dir, fetch)
+        self.assertEqual(len(book.assets), 16)
+        self.assertGreater(state["peak"], 1, "image downloads must overlap")
+
+    def test_same_basename_is_fetched_once_and_falls_back(self) -> None:
+        """Two URLs sharing a basename map to one zim path; the failed one defers."""
+        html = """<html><body><h1>Clash</h1>
+        <div class="chapter"><h2>Chapter I</h2>
+          <img src="a/figure.png"><img src="b/figure.png">
+        </div></body></html>"""
+        requested: list[str] = []
+
+        def fetch(url: str, _key: Path) -> bytes:
+            requested.append(url)
+            if url.endswith("/a/figure.png"):
+                raise RuntimeError("404")
+            return PNG
+
+        media_dir = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        book = parse_book(html, make_meta(), "https://example.test/book.html", media_dir, fetch)
+        self.assertEqual([asset.zim_path for asset in book.assets], ["media/figure.png"])
+        self.assertEqual(book.assets[0].url, "https://example.test/b/figure.png")
+        self.assertEqual(requested, ["https://example.test/a/figure.png", "https://example.test/b/figure.png"])
+        self.assertEqual(len(list(media_dir.iterdir())), 1)
+
+    def test_page_marker_wrapper_keeps_images(self) -> None:
+        """`pg_body_wrapper` holds page markers, but also image-form display math."""
+        html = """<html><body><h1>Wrapped</h1>
+        <div class="chapter"><h2>Chapter I</h2><p>Text before the formula.</p></div>
+        <div class="pg_body_wrapper"><span class="align-center"><img src="images/formula.svg"></span></div>
+        <div class="pg_body_wrapper">[Pg 42]</div>
+        <div class="chapter"><h2>Chapter II</h2><p>Text after the formula.</p></div>
+        </body></html>"""
+        book = self.parse(html, payloads={"https://example.test/images/formula.svg": b"<svg/>"})
+        chapter = next(page for page in book.pages if page.path == "chapter/001.html")
+        self.assertIn('src="../media/formula.svg"', chapter.body)
+        self.assertNotIn("[Pg 42]", chapter.body)
+        self.assertEqual([asset.zim_path for asset in book.assets], ["media/formula.svg"])
+
     def test_front_page_metadata(self) -> None:
         book = self.parse(MODERN_HTML)
         index = next(page for page in book.pages if page.path == "index.html")
@@ -407,6 +473,60 @@ class ZimTest(unittest.TestCase):
         search = Searcher(archive).search(Query().set_query("unicorn"))
         self.assertEqual(search.get_estimated_matches(), 1)
         self.assertEqual([result.path for result in search.get_results(0, 5)], ["chapter/002.html"])
+
+
+class ArchiveNoticeTest(unittest.TestCase):
+    """Latin has no Xapian stemmer; libzim's notice must not reach stderr."""
+
+    @contextlib.contextmanager
+    def captured_stderr(self):
+        path = Path(self.enterContext(tempfile.TemporaryDirectory())) / "stderr.txt"
+        saved = os.dup(2)
+        sys.stderr.flush()
+        target_fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
+        try:
+            os.dup2(target_fd, 2)
+        finally:
+            os.close(target_fd)
+        try:
+            yield path
+        finally:
+            sys.stderr.flush()
+            os.dup2(saved, 2)
+            os.close(saved)
+
+    def test_latin_archive_is_built_quietly_and_stays_searchable(self) -> None:
+        media_dir = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        book = parse_book(
+            MODERN_HTML,
+            make_meta(languages=("la",), language3="lat", language_label="Latin"),
+            "https://example.test/book.html",
+            media_dir,
+            fake_fetch({}),
+        )
+        target = media_dir / "latin.zim"
+
+        with self.captured_stderr() as stderr:
+            build_zim(target, book)
+            archive = open_archive(target)
+            search = Searcher(archive).search(Query().set_query("unicorn"))
+        output = stderr.read_text(encoding="utf-8", errors="replace")
+
+        self.assertNotIn("No stemming", output)
+        self.assertEqual(archive.get_metadata("Language"), b"lat")
+        self.assertEqual(search.get_estimated_matches(), 1)
+
+    def test_other_libzim_diagnostics_are_replayed(self) -> None:
+        class NoisyArchive:
+            def __init__(self, _path) -> None:
+                os.write(2, b"No stemming for language 'la'\nlibzim: something else\n")
+
+        with self.captured_stderr() as stderr, mock.patch("alexandria.archive.Archive", NoisyArchive):
+            open_archive(Path("unused.zim"))
+        output = stderr.read_text(encoding="utf-8", errors="replace")
+
+        self.assertNotIn("No stemming", output)
+        self.assertIn("libzim: something else", output)
 
 
 class ImageCacheTest(unittest.TestCase):
