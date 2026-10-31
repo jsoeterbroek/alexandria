@@ -311,5 +311,7 @@ books:
     build: false
   - id: 71292
     title: "The calculating engine by Charles Babbage"  
+  - id: 71865
+    title: "Mrs. Dalloway by Virginia Woolf"
   - id: 75201
     title: "A farewell to arms by Ernest Hemingway"
