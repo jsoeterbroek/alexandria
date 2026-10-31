@@ -1,2 +1,7 @@
-def main() -> None:
-    print("Hello from alexandria!")
+"""Alexandria - build a personal ZIM collection from Project Gutenberg ebooks."""
+
+from __future__ import annotations
+
+from .cli import main
+
+__all__ = ["main"]

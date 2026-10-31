@@ -1,13 +1,19 @@
 [project]
 name = "alexandria"
 version = "0.1.0"
-description = "Add your description here"
+description = "Build a personal ZIM collection from Project Gutenberg ebooks"
 readme = "README.md"
 authors = [
     { name = "Joost Soeterbroek", email = "joost.soeterbroek@gmail.com" }
 ]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "beautifulsoup4>=4.15.0",
+    "libzim>=4.0.0",
+    "pillow>=13.0.0",
+    "pycountry>=26.2.16",
+    "pyyaml>=6.0.3",
+]
 
 [project.scripts]
 alexandria = "alexandria:main"
@@ -15,3 +21,15 @@ alexandria = "alexandria:main"
 [build-system]
 requires = ["uv_build>=0.12.15,<0.13.0"]
 build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "ARG", "SIM", "RET", "C4"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.17.3",
+]
