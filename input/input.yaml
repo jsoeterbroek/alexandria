@@ -1,0 +1,16 @@
+# Alexandria descriptor: every book listed here is downloaded from Project
+# Gutenberg and converted into a ZIM file in `output/`.
+#
+# Optional per-book keys:
+#   title:    override the RDF title
+#   language: override the RDF language (ISO 639-1/639-3)
+#   html:     use a local HTML file instead of downloading the ebook
+#   rdf:      use a local RDF metadata file instead of downloading it
+
+output: output
+cache: cache
+
+books:
+  - id: 28054
+  - id: 11
+  - id: 1342
