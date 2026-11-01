@@ -23,87 +23,118 @@ cache: cache
 books:
   - id: 10
     title: "The King James Version of the Bible"  # top-100 #59
+    author: "Various"
     build: false
   - id: 11
     title: "Alice's Adventures in Wonderland"  # top-100 #4
+    author: "Lewis Carroll"
   - id: 12
     title: "Through the Looking-Glass"  # top-100 #99
+    author: "Lewis Carroll"
   - id: 16
     title: "Peter Pan"  # top-100 #73
+    author: "J. M. Barrie"
   - id: 18
     title: "The Federalist Papers"  # rebuild list
     author: "Hamilton, Jay, and Madison"
     build: false
   - id: 23
     title: "Narrative of the Life of Frederick Douglass, an American Slave"  # top-100 #57
+    author: "Frederick Douglass"
     build: false
   - id: 35
     title: "The Time Machine"  # top-100 #55
+    author: "H. G. Wells"
   - id: 36
     title: "The war of the worlds"  # top-100 #78
+    author: "H. G. Wells"
   - id: 41
     title: "The Legend of Sleepy Hollow"  # top-100 #23
+    author: "Washington Irving"
   - id: 43
     title: "The strange case of Dr. Jekyll and Mr. Hyde"  # top-100 #13
+    author: "Robert Louis Stevenson"
   - id: 45
     title: "Anne of Green Gables"  # top-100 #48
+    author: "L. M. Montgomery"
     build: false
   - id: 46
     title: "A Christmas Carol in Prose; Being a Ghost Story of Christmas"  # top-100 #40
+    author: "Charles Dickens"
   - id: 55
     title: "The Wonderful Wizard of Oz"  # top-100 #38
+    author: "L. Frank Baum"
   - id: 74
     title: "The Adventures of Tom Sawyer, Complete"  # top-100 #27
+    author: "Mark Twain"
     build: false
   - id: 76
     title: "Adventures of Huckleberry Finn"  # top-100 #41
+    author: "Mark Twain"
     build: false
   - id: 84
     title: "Frankenstein; or, The modern Prometheus"  # top-100 #2
+    author: "Mary Shelley"
   - id: 98
     title: "A Tale of Two Cities"  # top-100 #11
+    author: "Charles Dickens"
   - id: 100
     title: "The Complete Works of William Shakespeare"  # top-100 #8
+    author: "William Shakespeare"
     build: false
   - id: 120
     title: "Treasure Island"  # top-100 #44
+    author: "Robert Louis Stevenson"
   - id: 132
     title: "The Art of War"  # top-100 #74
+    author: "Sun Tzu"
   - id: 135
     title: "Les Misérables"  # top-100 #80
+    author: "Victor Hugo"
   - id: 140
     title: "The Jungle"  # rebuild list
     author: "Upton Sinclair"
     build: false
   - id: 145
     title: "Middlemarch"  # top-100 #10
+    author: "George Eliot"
     build: false
   - id: 158
     title: "Emma"  # top-100 #63
+    author: "Jane Austen"
     build: false
   - id: 161
     title: "Sense and Sensibility"  # top-100 #53
+    author: "Jane Austen"
   - id: 174
     title: "The Picture of Dorian Gray"  # top-100 #12
+    author: "Oscar Wilde"
   - id: 205
     title: "Walden, and On The Duty Of Civil Disobedience"  # top-100 #25
+    author: "Henry David Thoreau"
   - id: 219
     title: "Heart of Darkness"  # top-100 #70
+    author: "Joseph Conrad"
   - id: 228
     title: "The Aeneid"  # rebuild list
     author: "Virgil"
   - id: 244
     title: "A Study in Scarlet"  # top-100 #82
+    author: "Arthur Conan Doyle"
   - id: 345
     title: "Dracula"  # top-100 #6
+    author: "Bram Stoker"
   - id: 394
     title: "Cranford"  # top-100 #39
+    author: "Elizabeth Gaskell"
     build: false
   - id: 408
     title: "The Souls of Black Folk"  # top-100 #67
+    author: "W. E. B. Du Bois"
     build: false
   - id: 514
     title: "Little Women"  # top-100 #66
+    author: "Louisa May Alcott"
     build: false
   - id: 521
     title: "The Life and Adventures of Robinson Crusoe"  # rebuild list
@@ -113,61 +144,87 @@ books:
     author: "Charles Dickens"
   - id: 768
     title: "Wuthering Heights"  # top-100 #32
+    author: "Emily Brontë"
   - id: 829
     title: "Gulliver's Travels into Several Remote Nations of the World"  # top-100 #90
+    author: "Jonathan Swift"
   - id: 844
     title: "The Importance of Being Earnest: A Trivial Comedy for Serious People"  # top-100 #34
+    author: "Oscar Wilde"
   - id: 996
     title: "Don Quixote"  # top-100 #89
+    author: "Miguel de Cervantes"
   - id: 1080
     title: "A Modest Proposal"  # top-100 #31
+    author: "Jonathan Swift"
   - id: 1170
     title: "Anabasis"
     author: "Xenophon"
   - id: 1184
     title: "The Count of Monte Cristo"  # top-100 #22
+    author: "Alexandre Dumas"
   - id: 1228
     title: "On the Origin of Species By Means of Natural Selection"  # top-100 #79
+    author: "Charles Darwin"
   - id: 1232
     title: "The Prince"  # top-100 #17
+    author: "Niccolò Machiavelli"
   - id: 1259
     title: "Twenty years after"  # top-100 #45
+    author: "Alexandre Dumas"
   - id: 1260
     title: "Jane Eyre: An Autobiography"  # top-100 #14
+    author: "Charlotte Brontë"
     build: false
   - id: 1342
     title: "Pride and Prejudice"  # top-100 #1
+    author: "Jane Austen"
   - id: 1399
     title: "Anna Karenina"  # top-100 #92
+    author: "Leo Tolstoy"
   - id: 1400
     title: "Great Expectations"  # top-100 #24
+    author: "Charles Dickens"
   - id: 1497
     title: "The Republic"  # top-100 #61
+    author: "Plato"
   - id: 1513
     title: "Romeo and Juliet"  # top-100 #9
+    author: "William Shakespeare"
   - id: 1661
     title: "The Adventures of Sherlock Holmes"  # top-100 #5
+    author: "Arthur Conan Doyle"
   - id: 1727
     title: "The Odyssey"  # top-100 #30
+    author: "Homer"
   - id: 1952
     title: "The Yellow Wallpaper"  # top-100 #21
+    author: "Charlotte Perkins Gilman"
     build: false
   - id: 1998
     title: "Thus Spake Zarathustra: A Book for All and None"  # top-100 #65
+    author: "Friedrich Nietzsche"
   - id: 2000
     title: "Don Quijote"  # top-100 #95
+    author: "Miguel de Cervantes"
   - id: 2147
     title: "The Works of Edgar Allan Poe — Volume 1"
+    author: "Edgar Allan Poe"
   - id: 2148
     title: "The Works of Edgar Allan Poe — Volume 2"  # top-100 #86
+    author: "Edgar Allan Poe"
   - id: 2149
     title: "The Works of Edgar Allan Poe — Volume 3"
+    author: "Edgar Allan Poe"
   - id: 2150
     title: "The Works of Edgar Allan Poe — Volume 4"
+    author: "Edgar Allan Poe"
   - id: 2151
     title: "The Works of Edgar Allan Poe — Volume 5"
+    author: "Edgar Allan Poe"
   - id: 2160
     title: "The Expedition of Humphry Clinker"  # top-100 #46
+    author: "Tobias Smollett"
     build: false
   - id: 2199
     title: "The Iliad"
@@ -180,34 +237,47 @@ books:
     author: "Herodotus"
   - id: 2542
     title: "A Doll's House : a play"  # top-100 #54
+    author: "Henrik Ibsen"
     build: false
   - id: 2554
     title: "Crime and Punishment"  # top-100 #15
+    author: "Fyodor Dostoevsky"
   - id: 2591
     title: "Grimms' Fairy Tales"  # top-100 #50
+    author: "Jacob and Wilhelm Grimm"
   - id: 2600
     title: "War and Peace"  # top-100 #28
+    author: "Leo Tolstoy"
   - id: 2641
     title: "A Room with a View"  # top-100 #18
+    author: "E. M. Forster"
   - id: 2680
     title: "Meditations"  # top-100 #20
+    author: "Marcus Aurelius"
   - id: 2701
     title: "Moby Dick; Or, The Whale"  # top-100 #3
+    author: "Herman Melville"
   - id: 2707
     title: "The History of Herodotus — Volume 1"
     author: "Herodotus"
   - id: 2814
     title: "Dubliners"  # top-100 #98
+    author: "James Joyce"
   - id: 2852
     title: "The Hound of the Baskervilles"  # top-100 #81
+    author: "Arthur Conan Doyle"
   - id: 3207
     title: "Leviathan"  # top-100 #33
+    author: "Thomas Hobbes"
   - id: 3296
     title: "The Confessions of St. Augustine"  # top-100 #58
+    author: "Augustine of Hippo"
   - id: 3300
     title: "An Inquiry into the Nature and Causes of the Wealth of Nations"  # top-100 #76
+    author: "Adam Smith"
   - id: 3330
     title: "The Analects of Confucius"  # rebuild list
+    author: "Confucius"
   - id: 3435
     title: "The Book of the Thousand Nights and a Night — Volume 01 (of 10)"
     author: "Richard Francis Burton"
@@ -253,43 +323,55 @@ books:
     author: "Giovanni Boccaccio"
   - id: 4085
     title: "The Adventures of Roderick Random"  # top-100 #52
+    author: "Tobias Smollett"
     build: false
   - id: 4300
     title: "Ulysses"  # top-100 #56
+    author: "James Joyce"
   - id: 4363
     title: "Beyond Good and Evil"  # top-100 #68
+    author: "Friedrich Nietzsche"
   - id: 5197
     title: "My Life — Volume 1"  # top-100 #49
+    author: "Richard Wagner"
     build: false
   - id: 5200
     title: "Metamorphosis"  # top-100 #19
+    author: "Franz Kafka"
   - id: 5658
     title: "Lord Jim"
     author: "Joseph Conrad"
   - id: 5740
     title: "Tractatus Logico-Philosophicus"  # top-100 #75
+    author: "Ludwig Wittgenstein"
   - id: 6400
     title: "The Lives of the Twelve Caesars"
     author: "Suetonius"
   - id: 6593
     title: "History of Tom Jones, a Foundling"  # top-100 #42
+    author: "Henry Fielding"
     build: false
   - id: 6761
     title: "The Adventures of Ferdinand Count Fathom — Complete"  # top-100 #47
+    author: "Tobias Smollett"
     build: false
   - id: 7142
     title: "The History of the Peloponnesian War"  # rebuild list
     author: "Thucydides"
   - id: 7370
     title: "Second Treatise of Government"  # top-100 #62
+    author: "John Locke"
     build: false
   - id: 8438
     title: "The Nicomachean Ethics of Aristotle"  # rebuild list
+    author: "Aristotle"
   - id: 8492
     title: "The King in Yellow"  # top-100 #60
+    author: "Robert W. Chambers"
     build: false
   - id: 8800
     title: "The divine comedy"  # top-100 #97
+    author: "Dante Alighieri"
   - id: 9550
     title: "Manual of Gardening"  # rebuild list
     author: "L. H. Bailey"
@@ -300,6 +382,7 @@ books:
     build: false
   - id: 10007
     title: "Carmilla"  # top-100 #94
+    author: "Sheridan Le Fanu"
     build: false
   - id: 10657
     title: "De Bello Gallico"
@@ -322,8 +405,10 @@ books:
     author: "Michael Faraday"
   - id: 16328
     title: "Beowulf: An Anglo-Saxon Epic Poem"  # top-100 #43
+    author: "Anonymous"
   - id: 16389
     title: "The Enchanted April"  # top-100 #35
+    author: "Elizabeth von Arnim"
     build: false
   - id: 16764
     title: "History of the Wars, Books I and II: The Persian War"
@@ -339,12 +424,14 @@ books:
     author: "Voltaire"
   - id: 20203
     title: "Autobiography of Benjamin Franklin"  # top-100 #77
+    author: "Benjamin Franklin"
     build: false
   - id: 20298
     title: "History of the Wars, Books V and VI: The Gothic War"
     author: "Procopius"
   - id: 20738
     title: "Diccionario Ingles-Español-Tagalog"  # top-100 #96
+    author: "Sofronio G. Calderón"
     build: false
   - id: 20763
     title: "Carpentry for Boys"  # rebuild list
@@ -363,16 +450,20 @@ books:
     build: false
   - id: 25344
     title: "The Scarlet Letter"  # top-100 #36
+    author: "Nathaniel Hawthorne"
   - id: 25717
     title: "The History of the Decline and Fall of the Roman Empire"
     author: "Edward Gibbon"
   - id: 26471
     title: "Spoon River Anthology"  # top-100 #71
+    author: "Edgar Lee Masters"
     build: false
   - id: 27827
     title: "The Kama Sutra of Vatsyayana"  # top-100 #85
+    author: "Vatsyayana"
   - id: 28054
     title: "The Brothers Karamazov"  # top-100 #69
+    author: "Fyodor Dostoevsky"
   - id: 28233
     title: "Philosophiae Naturalis Principia Mathematica"
     author: "Isaac Newton"
@@ -397,14 +488,19 @@ books:
     author: "H. P. Lovecraft"
   - id: 33283
     title: "Calculus Made Easy"  # top-100 #93
+    author: "Silvanus P. Thompson"
   - id: 34901
     title: "On Liberty"  # top-100 #72
+    author: "John Stuart Mill"
   - id: 36034
     title: "White nights, and other stories"  # top-100 #91
+    author: "Fyodor Dostoevsky"
   - id: 37106
     title: "Little Women; Or, Meg, Jo, Beth, and Amy"  # top-100 #26
+    author: "Louisa May Alcott"
   - id: 37683
     title: "Chambers's Twentieth Century Dictionary (part 1 of 4: A-D)"  # top-100 #7
+    author: "Thomas Davidson"
     build: false
   - id: 38015
     title: "De Re Metallica"  # rebuild list
@@ -417,9 +513,11 @@ books:
     author: "Henri Poincaré"
   - id: 41445
     title: "Frankenstein; or, The modern Prometheus"  # top-100 #83
+    author: "Mary Shelley"
     build: false
   - id: 42324
     title: "Frankenstein; or, The modern Prometheus"  # top-100 #100
+    author: "Mary Shelley"
     build: false
   - id: 42602
     title: "The Steam Engine Explained and Illustrated"  # rebuild list
@@ -427,6 +525,7 @@ books:
     build: false
   - id: 45188
     title: "The International Development of China"  # top-100 #84
+    author: "Sun Yat-sen"
     build: false
   - id: 45988
     title: "Novum Organum"  # rebuild list
@@ -437,21 +536,26 @@ books:
     build: false
   - id: 49008
     title: "The Works of William Shakespeare [Cambridge Edition] [Vol. 8 of 9]"  # top-100 #37
+    author: "William Shakespeare"
     build: false
   - id: 49297
     build: false
     title: "The Works of William Shakespeare [Cambridge Edition] [Vol. 5 of 9]"  # top-100 #51
+    author: "William Shakespeare"
   - id: 50133
     title: "The Dunwich horror"
     author: "H. P. Lovecraft"
   - id: 61985
     title: "Harrods for Everything"  # top-100 #64
+    author: "Harrods Ltd."
     build: false
   - id: 62383
     title: "A Biblia Sagrada, Contendo o Velho e o Novo Testamento"  # top-100 #87
+    author: "Various"
     build: false
   - id: 64317
     title: "The Great Gatsby"  # top-100 #16
+    author: "F. Scott Fitzgerald"
   - id: 65061
     title: "The Boston Cooking-School Cook Book"  # rebuild list
     author: "Fannie Merritt Farmer"
@@ -462,11 +566,13 @@ books:
     build: false
   - id: 67098
     title: "Winnie-the-Pooh"  # top-100 #88
+    author: "A. A. Milne"
   - id: 67138
     title: "The Sun Also Rises"
     author: "Ernest Hemingway"
   - id: 67979
     title: "The Blue Castle: a novel"  # top-100 #29
+    author: "L. M. Montgomery"
     build: false
   - id: 68282
     title: "The call of Cthulhu"
