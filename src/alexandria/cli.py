@@ -99,7 +99,8 @@ def main(argv: list[str] | None = None) -> int:
         width = max((len(book.book_id) for book in books), default=1)
         for book in books:
             title = f"  {book.title}" if book.title else ""
-            print(f"{book.book_id:<{width}}{title}")
+            author = f" — {book.author}" if book.author else ""
+            print(f"{book.book_id:<{width}}{title}{author}")
         return 0
 
     if args.library:

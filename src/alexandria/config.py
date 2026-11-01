@@ -13,6 +13,10 @@ up in the local ZIM collection::
 ``modernize: true`` rewrites archaic English ("thou knowest", "he cometh",
 "quoth", "hath") into present-day English before the book is split and packed.
 
+``title`` and ``author`` override the RDF values in the ZIM's ``Title`` and
+``Creator`` metadata and are shown by ``make list``. The ``author`` value is a
+plain display name, not Gutenberg's "Surname, Forename" form.
+
 An entry may also point at local files instead of the network::
 
     - id: 1342
@@ -39,6 +43,7 @@ class BookSpec:
 
     book_id: str
     title: str | None = None
+    author: str | None = None
     html: Path | None = None
     rdf: Path | None = None
     language: str | None = None
@@ -77,6 +82,7 @@ def _book_spec(raw: Any, index: int) -> BookSpec:
         return Path(str(value)).expanduser()
 
     title = raw.get("title")
+    author = raw.get("author")
     language = raw.get("language")
     modernize = raw.get("modernize", False)
     build = raw.get("build", True)
@@ -87,6 +93,7 @@ def _book_spec(raw: Any, index: int) -> BookSpec:
     return BookSpec(
         book_id=book_id,
         title=str(title).strip() if title else None,
+        author=str(author).strip() if author else None,
         html=optional_path("html"),
         rdf=optional_path("rdf"),
         language=str(language).strip() if language else None,

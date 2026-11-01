@@ -45,6 +45,9 @@ books:
     title: "The King James Version of the Bible"  # top-100 #59
   - id: 11
     title: "Alice's Adventures in Wonderland"  # top-100 #4
+  - id: 766
+    title: "David Copperfield"
+    author: "Charles Dickens"
 ```
 
 Each entry accepts optional keys:
@@ -53,6 +56,7 @@ Each entry accepts optional keys:
 |------------|------------------------------------------------------------------------------|
 | `id`       | Gutenberg ebook number (required)                                            |
 | `title`    | Display title; used by `make list` and as the archive title (RDF when absent) |
+| `author`   | Display author; replaces the RDF creator in the archive and library (RDF when absent) |
 | `language` | Replace the RDF language (ISO 639-1 or 639-3)                                 |
 | `modernize`| Rewrite archaic English ("thou knowest", "quoth") into modern English (default `false`) |
 | `html`     | Use a local HTML file instead of downloading the ebook                       |
@@ -67,8 +71,13 @@ Each entry accepts optional keys:
     build: false
 ```
 
-`make list` prints `id  title` for every buildable entry, using the descriptor
-titles only — no network lookup.
+`make list` prints `id  title — author` for every buildable entry, using the
+descriptor values only — no network lookup. Both `title` and `author` are
+display overrides: they replace the RDF values in the archive's `Title` and
+`Creator` metadata, and the summary in `library.xml` is regenerated from them.
+That matters for records whose RDF is wrong or incomplete — ebook #68282 (*The
+call of Cthulhu*) ships a metadata record belonging to a different book, and the
+*Thousand Nights* volumes list Burton only as translator.
 
 ### Modern English
 

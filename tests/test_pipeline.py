@@ -34,7 +34,7 @@ from alexandria.gutenberg import GutenbergError, iso639_3, load_rdf
 from alexandria.library import LIBRARY_NAME, LIBRARY_VERSION, write_library
 from alexandria.models import BookMeta
 from alexandria.util import human_size, slugify, url_cache_key
-from alexandria.workflow import BookReport, Workflow
+from alexandria.workflow import BookReport, Workflow, _apply_overrides
 from alexandria.zim import build_zim
 
 RDF = """<?xml version="1.0" encoding="utf-8"?>
@@ -288,6 +288,16 @@ class ConfigTest(unittest.TestCase):
             path.write_text("books:\n  - id: 11\n    modernize: maybe\n", encoding="utf-8")
             with self.assertRaises(ConfigError):
                 load_config(path)
+
+    def test_author_key(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "input.yaml"
+            path.write_text(
+                'books:\n  - id: 11\n  - id: 766\n    title: "David Copperfield"\n    author: "Charles Dickens"\n',
+                encoding="utf-8",
+            )
+            config = load_config(path)
+        self.assertEqual([book.author for book in config.books], [None, "Charles Dickens"])
 
     def test_build_flag(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -560,6 +570,37 @@ class ParsingTest(unittest.TestCase):
         joined = " ".join(page.body for page in chapters)
         self.assertIn("Headword 0", joined)
         self.assertIn("Headword 399", joined)
+
+
+class OverrideTest(unittest.TestCase):
+    """Descriptor title/author overrides reach the ZIM and its description."""
+
+    def test_title_and_author_replace_rdf_values(self) -> None:
+        meta = make_meta(title="The Original Title", creators=("Dickens, Charles",))
+        spec = BookSpec(book_id="999", title="David Copperfield", author="Charles Dickens")
+        updated = _apply_overrides(meta, spec)
+        self.assertEqual(updated.title, "David Copperfield")
+        self.assertEqual(updated.creators, ("Charles Dickens",))
+        self.assertIn("David Copperfield by Charles Dickens.", updated.description)
+        self.assertNotIn("Dickens, Charles", updated.description)
+
+    def test_author_override_replaces_mismatched_rdf_creator(self) -> None:
+        # ebook 68282's RDF record names a different book's author entirely.
+        meta = make_meta(title="The call of Cthulhu", creators=("Levine, Carl Oscar",))
+        spec = BookSpec(book_id="68282", author="H. P. Lovecraft")
+        updated = _apply_overrides(meta, spec)
+        self.assertEqual(updated.creators, ("H. P. Lovecraft",))
+        self.assertIn("The call of Cthulhu by H. P. Lovecraft.", updated.description)
+
+    def test_no_overrides_returns_metadata_unchanged(self) -> None:
+        meta = make_meta()
+        self.assertIs(_apply_overrides(meta, BookSpec(book_id="999")), meta)
+
+    def test_language_override_rebuilds_description(self) -> None:
+        meta = make_meta(title="Book", creators=("Doe, Jane",))
+        updated = _apply_overrides(meta, BookSpec(book_id="999", language="la"))
+        self.assertEqual(updated.language3, "lat")
+        self.assertIn("Book by Doe, Jane.", updated.description)
 
 
 class ZimTest(unittest.TestCase):

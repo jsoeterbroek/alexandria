@@ -111,6 +111,21 @@ def _classifications(root: ET.Element) -> tuple[str, ...]:
     return tuple(dict.fromkeys(codes))
 
 
+def describe(
+    title: str,
+    creators: tuple[str, ...],
+    book_id: str,
+    issued: str,
+    subjects: tuple[str, ...],
+) -> str:
+    """Catalogue summary for a book: byline, release date and subjects."""
+    byline = ", ".join(creators) or "an unknown author"
+    description = f"{title} by {byline}. Project Gutenberg ebook #{book_id}, released {issued}."
+    if subjects:
+        description += " Subjects: " + "; ".join(subjects) + "."
+    return description
+
+
 def load_rdf(path: Path, book_id: str) -> BookMeta:
     """Parse a Gutenberg RDF record into ``BookMeta``."""
     try:
@@ -133,10 +148,6 @@ def load_rdf(path: Path, book_id: str) -> BookMeta:
 
     code3 = iso639_3(languages[0])
     label = language_label(code3, languages[0])
-    byline = ", ".join(creators) or "an unknown author"
-    description = f"{title} by {byline}. Project Gutenberg ebook #{book_id}, released {issued}."
-    if subjects:
-        description += " Subjects: " + "; ".join(subjects) + "."
     return BookMeta(
         book_id=book_id,
         title=title,
@@ -148,7 +159,7 @@ def load_rdf(path: Path, book_id: str) -> BookMeta:
         language_label=label,
         issued=issued,
         rights=rights or "Public domain in the USA.",
-        description=description or f"Project Gutenberg ebook #{book_id}.",
+        description=describe(title, creators, book_id, issued, subjects),
         source_url=f"https://www.gutenberg.org/ebooks/{book_id}",
         lcc=_classifications(root),
     )

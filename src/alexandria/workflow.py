@@ -9,7 +9,7 @@ from pathlib import Path
 from .archive import open_archive
 from .config import BookSpec, Config
 from .document import COVER_PATH, parse_book
-from .gutenberg import COVER_FALLBACK_URL, COVER_URL, fetch_html, fetch_metadata, iso639_3, language_label
+from .gutenberg import COVER_FALLBACK_URL, COVER_URL, describe, fetch_html, fetch_metadata, iso639_3, language_label
 from .library import LIBRARY_NAME, write_library
 from .models import Asset, BookMeta
 from .net import Fetcher
@@ -149,6 +149,9 @@ def _apply_overrides(meta: BookMeta, spec: BookSpec) -> BookMeta:
     changes: dict[str, object] = {}
     if spec.title:
         changes["title"] = spec.title
+    if spec.author:
+        # A single display name, not Gutenberg's "Surname, Forename" form.
+        changes["creators"] = (spec.author,)
     if spec.language:
         code3 = iso639_3(spec.language)
         changes.update(
@@ -156,4 +159,10 @@ def _apply_overrides(meta: BookMeta, spec: BookSpec) -> BookMeta:
             language3=code3,
             language_label=language_label(code3, spec.language),
         )
-    return replace(meta, **changes) if changes else meta
+    if not changes:
+        return meta
+    updated = replace(meta, **changes)
+    return replace(
+        updated,
+        description=describe(updated.title, updated.creators, updated.book_id, updated.issued, updated.subjects),
+    )

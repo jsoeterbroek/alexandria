@@ -4,6 +4,7 @@
 # Per-book keys:
 #   id        Gutenberg ebook number (required)
 #   title     display title; shown by `make list` and used as the ZIM title
+#   author    display author; replaces the RDF creator in the ZIM and library
 #   language  override the RDF language (ISO 639-1 or 639-3)
 #   html      use a local HTML file instead of downloading the ebook
 #   rdf       use a local RDF metadata file instead of downloading it
@@ -30,7 +31,8 @@ books:
   - id: 16
     title: "Peter Pan"  # top-100 #73
   - id: 18
-    title: "The Federalist Papers by Hamilton, Jay, and Madison"  # rebuild list
+    title: "The Federalist Papers"  # rebuild list
+    author: "Hamilton, Jay, and Madison"
     build: false
   - id: 23
     title: "Narrative of the Life of Frederick Douglass, an American Slave"  # top-100 #57
@@ -70,7 +72,8 @@ books:
   - id: 135
     title: "Les Misérables"  # top-100 #80
   - id: 140
-    title: "The Jungle by Upton Sinclair"  # rebuild list
+    title: "The Jungle"  # rebuild list
+    author: "Upton Sinclair"
     build: false
   - id: 145
     title: "Middlemarch"  # top-100 #10
@@ -87,7 +90,8 @@ books:
   - id: 219
     title: "Heart of Darkness"  # top-100 #70
   - id: 228
-    title: "The Aeneid by Virgil"  # rebuild list
+    title: "The Aeneid"  # rebuild list
+    author: "Virgil"
   - id: 244
     title: "A Study in Scarlet"  # top-100 #82
   - id: 345
@@ -102,9 +106,11 @@ books:
     title: "Little Women"  # top-100 #66
     build: false
   - id: 521
-    title: "The Life and Adventures of Robinson Crusoe by Daniel Defoe"  # rebuild list
+    title: "The Life and Adventures of Robinson Crusoe"  # rebuild list
+    author: "Daniel Defoe"
   - id: 766
-    title: "David Copperfield by Charles Dickens"  # rebuild list
+    title: "David Copperfield"  # rebuild list
+    author: "Charles Dickens"
   - id: 768
     title: "Wuthering Heights"  # top-100 #32
   - id: 829
@@ -116,7 +122,8 @@ books:
   - id: 1080
     title: "A Modest Proposal"  # top-100 #31
   - id: 1170
-    title: "Anabasis by Xenophon"
+    title: "Anabasis"
+    author: "Xenophon"
   - id: 1184
     title: "The Count of Monte Cristo"  # top-100 #22
   - id: 1228
@@ -163,11 +170,14 @@ books:
     title: "The Expedition of Humphry Clinker"  # top-100 #46
     build: false
   - id: 2199
-    title: "The Iliad by Homer"
+    title: "The Iliad"
+    author: "Homer"
   - id: 2383
-    title: "The Canterbury Tales, and Other Poems by Geoffrey Chaucer"  # rebuild list
+    title: "The Canterbury Tales, and Other Poems"  # rebuild list
+    author: "Geoffrey Chaucer"
   - id: 2456
-    title: "The History of Herodotus — Volume 2 by Herodotus"
+    title: "The History of Herodotus — Volume 2"
+    author: "Herodotus"
   - id: 2542
     title: "A Doll's House : a play"  # top-100 #54
     build: false
@@ -184,7 +194,8 @@ books:
   - id: 2701
     title: "Moby Dick; Or, The Whale"  # top-100 #3
   - id: 2707
-    title: "The History of Herodotus — Volume 1 by Herodotus"
+    title: "The History of Herodotus — Volume 1"
+    author: "Herodotus"
   - id: 2814
     title: "Dubliners"  # top-100 #98
   - id: 2852
@@ -198,37 +209,48 @@ books:
   - id: 3330
     title: "The Analects of Confucius"  # rebuild list
   - id: 3435
-    title: "The Book of the Thousand Nights and a Night — Volume 01 (of 10) by Burton"
+    title: "The Book of the Thousand Nights and a Night — Volume 01 (of 10)"
+    author: "Richard Francis Burton"
     modernize: true
   - id: 3436
-    title: "The Book of the Thousand Nights and a Night — Volume 02 (of 10) by Burton"
+    title: "The Book of the Thousand Nights and a Night — Volume 02 (of 10)"
+    author: "Richard Francis Burton"
     modernize: true
   - id: 3437
-    title: "The Book of the Thousand Nights and a Night — Volume 03 (of 10) by Burton"
+    title: "The Book of the Thousand Nights and a Night — Volume 03 (of 10)"
+    author: "Richard Francis Burton"
     modernize: true
   - id: 3438
-    title: "The Book of the Thousand Nights and a Night — Volume 04 (of 10) by Burton"
+    title: "The Book of the Thousand Nights and a Night — Volume 04 (of 10)"
+    author: "Richard Francis Burton"
     modernize: true
   - id: 3439
-    title: "The Book of the Thousand Nights and a Night — Volume 05 (of 10) by Burton"
+    title: "The Book of the Thousand Nights and a Night — Volume 05 (of 10)"
+    author: "Richard Francis Burton"
     modernize: true
   - id: 3440
-    title: "The Book of the Thousand Nights and a Night — Volume 06 (of 10) by Burton"
+    title: "The Book of the Thousand Nights and a Night — Volume 06 (of 10)"
+    author: "Richard Francis Burton"
     modernize: true
   - id: 3441
-    title: "The Book of the Thousand Nights and a Night — Volume 07 (of 10) by Burton"
+    title: "The Book of the Thousand Nights and a Night — Volume 07 (of 10)"
+    author: "Richard Francis Burton"
     modernize: true
   - id: 3442
-    title: "The Book of the Thousand Nights and a Night — Volume 08 (of 10) by Burton"
+    title: "The Book of the Thousand Nights and a Night — Volume 08 (of 10)"
+    author: "Richard Francis Burton"
     modernize: true
   - id: 3443
-    title: "The Book of the Thousand Nights and a Night — Volume 09 (of 10) by Burton"
+    title: "The Book of the Thousand Nights and a Night — Volume 09 (of 10)"
+    author: "Richard Francis Burton"
     modernize: true
   - id: 3444
-    title: "The Book of the Thousand Nights and a Night — Volume 10 (of 10) by Burton"
+    title: "The Book of the Thousand Nights and a Night — Volume 10 (of 10)"
+    author: "Richard Francis Burton"
     modernize: true
   - id: 3726
-    title: "The Decameron, Volume I by Giovanni Boccaccio"  # rebuild list
+    title: "The Decameron, Volume I"  # rebuild list
+    author: "Giovanni Boccaccio"
   - id: 4085
     title: "The Adventures of Roderick Random"  # top-100 #52
     build: false
@@ -242,11 +264,13 @@ books:
   - id: 5200
     title: "Metamorphosis"  # top-100 #19
   - id: 5658
-    title: "Lord Jim by Joseph Conrad"
+    title: "Lord Jim"
+    author: "Joseph Conrad"
   - id: 5740
     title: "Tractatus Logico-Philosophicus"  # top-100 #75
   - id: 6400
-    title: The Lives of the Twelve Caesars by Suetonius"
+    title: "The Lives of the Twelve Caesars"
+    author: "Suetonius"
   - id: 6593
     title: "History of Tom Jones, a Foundling"  # top-100 #42
     build: false
@@ -254,7 +278,8 @@ books:
     title: "The Adventures of Ferdinand Count Fathom — Complete"  # top-100 #47
     build: false
   - id: 7142
-    title: "The History of the Peloponnesian War by Thucydides"  # rebuild list
+    title: "The History of the Peloponnesian War"  # rebuild list
+    author: "Thucydides"
   - id: 7370
     title: "Second Treatise of Government"  # top-100 #62
     build: false
@@ -266,63 +291,81 @@ books:
   - id: 8800
     title: "The divine comedy"  # top-100 #97
   - id: 9550
-    title: "Manual of Gardening by L. H. Bailey"  # rebuild list
+    title: "Manual of Gardening"  # rebuild list
+    author: "L. H. Bailey"
     build: false
   - id: 9603
-    title: "Hung Lou Meng, or, The Dream of the Red Chamber, Book I by Cao Xueqin"  # rebuild list
+    title: "Hung Lou Meng, or, The Dream of the Red Chamber, Book I"  # rebuild list
+    author: "Cao Xueqin"
     build: false
   - id: 10007
     title: "Carmilla"  # top-100 #94
     build: false
   - id: 10657
-    title: "De Bello Gallico by Julius Caesar"
+    title: "De Bello Gallico"
+    author: "Julius Caesar"
   - id: 10661
-    title: "A Selection from the Discourses of Epictetus with the Encheiridion by Epictetus"
+    title: "A Selection from the Discourses of Epictetus with the Encheiridion"
+    author: "Epictetus"
   - id: 12439
-    title: "Notes on Nursing: What It Is, and What It Is Not by Florence Nightingale"  # rebuild list
+    title: "Notes on Nursing: What It Is, and What It Is Not"  # rebuild list
+    author: "Florence Nightingale"
     build: false
   - id: 12916
-    title: "The Secret History of the Court of Justinian by Procopius"
+    title: "The Secret History of the Court of Justinian"
+    author: "Procopius"
   - id: 14591
-    title: "Faust, Part I by Johann Wolfgang von Goethe"  # rebuild list
+    title: "Faust, Part I"  # rebuild list
+    author: "Johann Wolfgang von Goethe"
   - id: 14986
-    title: "Experimental Researches in Electricity, Volume 1 by Michael Faraday"  # rebuild list
+    title: "Experimental Researches in Electricity, Volume 1"  # rebuild list
+    author: "Michael Faraday"
   - id: 16328
     title: "Beowulf: An Anglo-Saxon Epic Poem"  # top-100 #43
   - id: 16389
     title: "The Enchanted April"  # top-100 #35
     build: false
   - id: 16764
-    title: "History of the Wars, Books I and II: The Persian War by Procopius"
+    title: "History of the Wars, Books I and II: The Persian War"
+    author: "Procopius"
   - id: 16765
-    title: "History of the Wars, Books III and IV: The Vandalic War by Procopius"
+    title: "History of the Wars, Books III and IV: The Vandalic War"
+    author: "Procopius"
   - id: 16927
-    title: "The Histories, Volumes I and II by Cornelius Tacitus"
+    title: "The Histories, Volumes I and II"
+    author: "Cornelius Tacitus"
   - id: 19942
-    title: "Candide by Voltaire"  # rebuild list
+    title: "Candide"  # rebuild list
+    author: "Voltaire"
   - id: 20203
     title: "Autobiography of Benjamin Franklin"  # top-100 #77
     build: false
   - id: 20298
-    title: "History of the Wars, Books V and VI: The Gothic War by Procopius"
+    title: "History of the Wars, Books V and VI: The Gothic War"
+    author: "Procopius"
   - id: 20738
     title: "Diccionario Ingles-Español-Tagalog"  # top-100 #96
     build: false
   - id: 20763
-    title: "Carpentry for Boys by James Slough Zerbe"  # rebuild list
+    title: "Carpentry for Boys"  # rebuild list
+    author: "James Slough Zerbe"
     build: false
   - id: 20772
-    title: "Agriculture for Beginners by Burkett, Hill, and Stevens"  # rebuild list
+    title: "Agriculture for Beginners"  # rebuild list
+    author: "Burkett, Hill, and Stevens"
     build: false
   - id: 21076
-    title: "The First Six Books of the Elements of Euclid by Euclid"  # rebuild list
+    title: "The First Six Books of the Elements of Euclid"  # rebuild list
+    author: "Euclid"
   - id: 24076
-    title: "Vegetable Dyes by Ethel Mairet"  # rebuild list
+    title: "Vegetable Dyes"  # rebuild list
+    author: "Ethel Mairet"
     build: false
   - id: 25344
     title: "The Scarlet Letter"  # top-100 #36
   - id: 25717
-    title: "The History of the Decline and Fall of the Roman Empire by Edward Gibbon"
+    title: "The History of the Decline and Fall of the Roman Empire"
+    author: "Edward Gibbon"
   - id: 26471
     title: "Spoon River Anthology"  # top-100 #71
     build: false
@@ -331,20 +374,27 @@ books:
   - id: 28054
     title: "The Brothers Karamazov"  # top-100 #69
   - id: 28233
-    title: "Philosophiae Naturalis Principia Mathematica by Isaac Newton"
+    title: "Philosophiae Naturalis Principia Mathematica"
+    author: "Isaac Newton"
   - id: 29728
-    title: "Cookery and Dining in Imperial Rome by Apicius"
+    title: "Cookery and Dining in Imperial Rome"
+    author: "Apicius"
   - id: 30107
-    title: "Principles of Political Economy by John Stuart Mill"  # rebuild list
+    title: "Principles of Political Economy"  # rebuild list
+    author: "John Stuart Mill"
   - id: 30155
-    title: "Relativity: The Special and General Theory by Albert Einstein"
+    title: "Relativity: The Special and General Theory"
+    author: "Albert Einstein"
   - id: 30775
-    title: "Elements of Chemistry by Antoine-Laurent Lavoisier"  # rebuild list
+    title: "Elements of Chemistry"  # rebuild list
+    author: "Antoine-Laurent Lavoisier"
   - id: 30802
-    title: "Commentaries on the Laws of England, Book the First by William Blackstone"  # rebuild list
+    title: "Commentaries on the Laws of England, Book the First"  # rebuild list
+    author: "William Blackstone"
     build: false
   - id: 31469
-    title: "The Shunned House by H. P. Lovecraft"
+    title: "The Shunned House"
+    author: "H. P. Lovecraft"
   - id: 33283
     title: "Calculus Made Easy"  # top-100 #93
   - id: 34901
@@ -357,11 +407,14 @@ books:
     title: "Chambers's Twentieth Century Dictionary (part 1 of 4: A-D)"  # top-100 #7
     build: false
   - id: 38015
-    title: "De Re Metallica by Georg Agricola"  # rebuild list
+    title: "De Re Metallica"  # rebuild list
+    author: "Georg Agricola"
   - id: 38326
-    title: "Bede's Ecclesiastical History of England by the Venerable Bede"  # rebuild list
+    title: "Bede's Ecclesiastical History of England"  # rebuild list
+    author: "the Venerable Bede"
   - id: 39713
-    title: "The Foundations of Science by Henri Poincaré"
+    title: "The Foundations of Science"
+    author: "Henri Poincaré"
   - id: 41445
     title: "Frankenstein; or, The modern Prometheus"  # top-100 #83
     build: false
@@ -369,15 +422,18 @@ books:
     title: "Frankenstein; or, The modern Prometheus"  # top-100 #100
     build: false
   - id: 42602
-    title: "The Steam Engine Explained and Illustrated by Dionysius Lardner"  # rebuild list
+    title: "The Steam Engine Explained and Illustrated"  # rebuild list
+    author: "Dionysius Lardner"
     build: false
   - id: 45188
     title: "The International Development of China"  # top-100 #84
     build: false
   - id: 45988
-    title: "Novum Organum by Francis Bacon"  # rebuild list
+    title: "Novum Organum"  # rebuild list
+    author: "Francis Bacon"
   - id: 47836
-    title: "The Matron's Manual of Midwifery by Frederick Hollick"  # rebuild list
+    title: "The Matron's Manual of Midwifery"  # rebuild list
+    author: "Frederick Hollick"
     build: false
   - id: 49008
     title: "The Works of William Shakespeare [Cambridge Edition] [Vol. 8 of 9]"  # top-100 #37
@@ -386,7 +442,8 @@ books:
     build: false
     title: "The Works of William Shakespeare [Cambridge Edition] [Vol. 5 of 9]"  # top-100 #51
   - id: 50133
-    title: "The Dunwich horror by H. P. Lovecraft"
+    title: "The Dunwich horror"
+    author: "H. P. Lovecraft"
   - id: 61985
     title: "Harrods for Everything"  # top-100 #64
     build: false
@@ -396,34 +453,46 @@ books:
   - id: 64317
     title: "The Great Gatsby"  # top-100 #16
   - id: 65061
-    title: "The Boston Cooking-School Cook Book by Fannie Merritt Farmer"  # rebuild list
+    title: "The Boston Cooking-School Cook Book"  # rebuild list
+    author: "Fannie Merritt Farmer"
     build: false
   - id: 66057
-    title: "The Tale of Genji by Murasaki Shikibu"  # rebuild list
+    title: "The Tale of Genji"  # rebuild list
+    author: "Murasaki Shikibu"
     build: false
   - id: 67098
     title: "Winnie-the-Pooh"  # top-100 #88
   - id: 67138
-    title: "The Sun Also Rises by Ernest Hemingway"
+    title: "The Sun Also Rises"
+    author: "Ernest Hemingway"
   - id: 67979
     title: "The Blue Castle: a novel"  # top-100 #29
     build: false
   - id: 68282
-    title: "The call of Cthulhu by H. P. Lovecraft"
+    title: "The call of Cthulhu"
+    author: "H. P. Lovecraft"
   - id: 70652
-    title: "At the mountains of madness by H. P. Lovecraft"
+    title: "At the mountains of madness"
+    author: "H. P. Lovecraft"
   - id: 71292
-    title: "The calculating engine by Charles Babbage"  
+    title: "The calculating engine"
+    author: "Charles Babbage"
   - id: 71865
-    title: "Mrs. Dalloway by Virginia Woolf"
+    title: "Mrs. Dalloway"
+    author: "Virginia Woolf"
   - id: 72966
-    title: "The horror at Red Hook by H. P. Lovecraft"
+    title: "The horror at Red Hook"
+    author: "H. P. Lovecraft"
   - id: 73181
-    title: "The shadow over Innsmouth by H. P. Lovecraft"
+    title: "The shadow over Innsmouth"
+    author: "H. P. Lovecraft"
   - id: 73547
-    title: "The case of Charles Dexter Ward by H. P. Lovecraft"
+    title: "The case of Charles Dexter Ward"
+    author: "H. P. Lovecraft"
   - id: 74359
-    title: "Domestic Medicine by William Buchan"  # rebuild list
+    title: "Domestic Medicine"  # rebuild list
+    author: "William Buchan"
     build: false
   - id: 75201
-    title: "A farewell to arms by Ernest Hemingway"
+    title: "A farewell to arms"
+    author: "Ernest Hemingway"
