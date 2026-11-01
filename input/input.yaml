@@ -103,9 +103,6 @@ books:
     title: "Emma"  # top-100 #63
     author: "Jane Austen"
     build: false
-  - id: 161
-    title: "Sense and Sensibility"  # top-100 #53
-    author: "Jane Austen"
   - id: 174
     title: "The Picture of Dorian Gray"  # top-100 #12
     author: "Oscar Wilde"
@@ -157,6 +154,7 @@ books:
   - id: 1080
     title: "A Modest Proposal"  # top-100 #31
     author: "Jonathan Swift"
+    build: false
   - id: 1170
     title: "Anabasis"
     author: "Xenophon"
@@ -268,9 +266,11 @@ books:
   - id: 3207
     title: "Leviathan"  # top-100 #33
     author: "Thomas Hobbes"
+    build: false
   - id: 3296
     title: "The Confessions of St. Augustine"  # top-100 #58
     author: "Augustine of Hippo"
+    build: false
   - id: 3300
     title: "An Inquiry into the Nature and Causes of the Wealth of Nations"  # top-100 #76
     author: "Adam Smith"
@@ -463,6 +463,7 @@ books:
   - id: 27827
     title: "The Kama Sutra of Vatsyayana"  # top-100 #85
     author: "Vatsyayana"
+    build: false
   - id: 28054
     title: "The Brothers Karamazov"  # top-100 #69
     author: "Fyodor Dostoevsky"
@@ -472,6 +473,7 @@ books:
   - id: 29728
     title: "Cookery and Dining in Imperial Rome"
     author: "Apicius"
+    build: false
   - id: 30107
     title: "Principles of Political Economy"  # rebuild list
     author: "John Stuart Mill"
@@ -500,6 +502,7 @@ books:
   - id: 37106
     title: "Little Women; Or, Meg, Jo, Beth, and Amy"  # top-100 #26
     author: "Louisa May Alcott"
+    build: false
   - id: 37683
     title: "Chambers's Twentieth Century Dictionary (part 1 of 4: A-D)"  # top-100 #7
     author: "Thomas Davidson"
