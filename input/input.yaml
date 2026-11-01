@@ -200,7 +200,6 @@ books:
   - id: 1952
     title: "The Yellow Wallpaper"  # top-100 #21
     author: "Charlotte Perkins Gilman"
-    build: false
   - id: 1998
     title: "Thus Spake Zarathustra: A Book for All and None"  # top-100 #65
     author: "Friedrich Nietzsche"
@@ -325,6 +324,9 @@ books:
     title: "The Adventures of Roderick Random"  # top-100 #52
     author: "Tobias Smollett"
     build: false
+  - id: 4200
+    title: "The Diary of Samuel Pepys - Complete"
+    author: "Samuel Pepys"
   - id: 4300
     title: "Ulysses"  # top-100 #56
     author: "James Joyce"
