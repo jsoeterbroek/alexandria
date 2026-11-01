@@ -115,6 +115,9 @@ books:
   - id: 228
     title: "The Aeneid"  # rebuild list
     author: "Virgil"
+  - id: 236
+    title: "The Jungle Book"
+    author: "Rudyard Kipling"
   - id: 244
     title: "A Study in Scarlet"  # top-100 #82
     author: "Arthur Conan Doyle"
@@ -226,6 +229,9 @@ books:
   - id: 2199
     title: "The Iliad"
     author: "Homer"
+  - id: 2226
+    title: "Kim"
+    author: "Rudyard Kipling"
   - id: 2383
     title: "The Canterbury Tales, and Other Poems"  # rebuild list
     author: "Geoffrey Chaucer"
@@ -257,6 +263,9 @@ books:
   - id: 2707
     title: "The History of Herodotus — Volume 1"
     author: "Herodotus"
+  - id: 2781
+    title: "Just so stories"
+    author: "Rudyard Kipling"
   - id: 2814
     title: "Dubliners"  # top-100 #98
     author: "James Joyce"
