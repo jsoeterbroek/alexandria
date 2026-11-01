@@ -11,9 +11,6 @@
 #   modernize rewrite archaic English into modern English (default false)
 #   build     false keeps the entry but skips it (default true)
 #
-# Entries marked "# rebuild list" are candidates for a civilisation-rebuild
-# library; they are disabled until reviewed by hand.
-#
 # Books are sorted by id so new entries are easy to place by hand.
 # Titles come from input/top_100.txt; comments show the top-100 rank.
 
@@ -109,6 +106,9 @@ books:
   - id: 205
     title: "Walden, and On The Duty Of Civil Disobedience"  # top-100 #25
     author: "Henry David Thoreau"
+  - id: 215
+    title: "The call of the wild"
+    author: "Jack London"
   - id: 219
     title: "Heart of Darkness"  # top-100 #70
     author: "Joseph Conrad"
@@ -151,6 +151,9 @@ books:
   - id: 844
     title: "The Importance of Being Earnest: A Trivial Comedy for Serious People"  # top-100 #34
     author: "Oscar Wilde"
+  - id: 910
+    title: "White Fang"
+    author: "Jack London"
   - id: 996
     title: "Don Quixote"  # top-100 #89
     author: "Miguel de Cervantes"
@@ -235,6 +238,9 @@ books:
   - id: 2383
     title: "The Canterbury Tales, and Other Poems"  # rebuild list
     author: "Geoffrey Chaucer"
+  - id: 2429
+    title: "Lost Face"
+    author: "Jack London"
   - id: 2456
     title: "The History of Herodotus — Volume 2"
     author: "Herodotus"
@@ -430,6 +436,9 @@ books:
   - id: 16927
     title: "The Histories, Volumes I and II"
     author: "Cornelius Tacitus"
+  - id: 18947
+    title: "The Prose Edda"
+    author: "Snorri Sturluson"
   - id: 19942
     title: "Candide"  # rebuild list
     author: "Voltaire"
@@ -606,6 +615,9 @@ books:
   - id: 73181
     title: "The shadow over Innsmouth"
     author: "H. P. Lovecraft"
+  - id: 73533
+    title: "The poetic Edda"
+    author: "H. A. Bellows"
   - id: 73547
     title: "The case of Charles Dexter Ward"
     author: "H. P. Lovecraft"
