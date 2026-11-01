@@ -5,8 +5,12 @@ Kiwix Desktop and ``kiwix-manage`` itself
 (see https://wiki.kiwix.org/wiki/FeedFormat)::
 
     <library version="20110515">
-      <book id="…" path="gutenberg-11-….zim" title="…" … />
+      <book id="…" path="gutenberg-11-….zim" title="…" category="literature" … />
     </library>
+
+``category`` drives the catalogue's category dropdown. libkiwix reads it from
+the attribute when present and otherwise derives it from a ``_category:`` tag,
+so both are written and stay in sync.
 """
 
 from __future__ import annotations
@@ -18,6 +22,7 @@ from xml.etree import ElementTree as ET
 from libzim.reader import Archive
 
 from .archive import open_archive
+from .classification import category_from_tags
 
 LIBRARY_NAME = "library.xml"
 LIBRARY_VERSION = "20110515"
@@ -60,6 +65,7 @@ def _book_attributes(archive: Archive, zim: Path, base: Path) -> dict[str, str] 
     title = _metadata(archive, "Title") or zim.stem
     resolved_base = base.resolve()
     resolved_zim = zim.resolve()
+    tags = _metadata(archive, "Tags") or _synthesized_tags(archive)
     attributes = {
         "id": str(archive.uuid),
         "path": resolved_zim.relative_to(resolved_base).as_posix()
@@ -71,7 +77,8 @@ def _book_attributes(archive: Archive, zim: Path, base: Path) -> dict[str, str] 
         "creator": _metadata(archive, "Creator") or "Unknown",
         "publisher": _metadata(archive, "Publisher") or "Project Gutenberg",
         "name": _metadata(archive, "Name") or title,
-        "tags": _metadata(archive, "Tags") or _synthesized_tags(archive),
+        "tags": tags,
+        "category": category_from_tags(tags),
         "date": _metadata(archive, "Date"),
         "articleCount": str(archive.article_count),
         "mediaCount": str(archive.media_count),

@@ -763,7 +763,6 @@ def render_index(meta: BookMeta, toc: list[TocEntry], cover_path: str | None) ->
     cover = f'<img class="cover" src="{cover_path}" alt="Cover of {title}">' if cover_path else ""
     subjects = "".join(f"<li>{html_lib.escape(subject)}</li>" for subject in meta.subjects)
     contributors = "".join(f"<li>{html_lib.escape(person)}</li>" for person in meta.contributors)
-    downloads = f"<dt>Downloads</dt><dd>{meta.downloads}</dd>" if meta.downloads else ""
     source = html_lib.escape(meta.source_url)
     ebook = html_lib.escape(meta.book_id)
 
@@ -788,7 +787,6 @@ def render_index(meta: BookMeta, toc: list[TocEntry], cover_path: str | None) ->
 <dt>Released</dt><dd>{html_lib.escape(meta.issued)}</dd>
 <dt>Language</dt><dd>{html_lib.escape(meta.language_label)}</dd>
 <dt>Rights</dt><dd>{html_lib.escape(meta.rights)}</dd>
-{downloads}
 </dl>
 {contributor_block}
 {subject_block}

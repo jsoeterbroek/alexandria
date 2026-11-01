@@ -130,6 +130,35 @@ and title indexes are built with the book's ISO 639-3 language. Each book's own
 cover is stored as a ZIM illustration at 192 px plus a 48 px favicon, which
 Kiwix uses in its catalogue.
 
+The Library of Congress classification in the RDF record (`PR`, `QA`, `DG`, …)
+becomes a Kiwix shelf category, written as `_category:<name>` in `Tags` and as
+the `category` attribute in `library.xml`. Kiwix's viewer shows those in its
+category dropdown, so a mixed collection can be narrowed to e.g. `science`
+without a text search. The label is one word on purpose: libkiwix indexes the
+category by splitting it on whitespace but filters by the raw string as a single
+Xapian term, so `Natural science` would list in the dropdown and then match
+nothing (a hyphen splits into two terms for the same reason). Every entry in the
+dropdown is therefore guaranteed to match at least one book.
+
+`alexandria/classification.py` labels a book from its primary LCC code — the
+first one that maps, which is Gutenberg's main classification. Top-level classes
+give `history`, `philosophy`, `science`, `political_science`, `technology` and
+so on; `P` is further split by subclass so a fiction-heavy collection does not
+collapse into one bucket:
+
+| Code | Category               | Code | Category                  |
+|------|------------------------|------|---------------------------|
+| `PA` | `classical_literature` | `PN` | `literary_criticism`      |
+| `PC` | `romance_languages`    | `PQ` | `romance_literature`      |
+| `PE` | `english_language`     | `PR` | `english_literature`      |
+| `PG` | `slavic_literature`    | `PS` | `american_literature`     |
+| `PJ` | `middle_eastern_literature` | `PT` | `germanic_literature` |
+| `PL` | `eastern_literature`   | `PZ` | `childrens_literature`    |
+
+Any other `P*` code falls back to `literature`. Adding a label for a code the
+collection uses is a one-line change; re-run `make build_all` afterwards, since
+the category is baked into each ZIM's metadata.
+
 Xapian has no stemmer for some languages (Latin, Ancient Greek, Hebrew, and
 other classical or liturgical languages). Those archives are indexed unstemmed:
 exact words are searchable, inflected forms are not conflated, and libzim's
@@ -161,13 +190,13 @@ replaces a good file.
 Every run rewrites `output/library.xml`, a Kiwix library file
 ([FeedFormat](https://wiki.kiwix.org/wiki/FeedFormat)) describing all ZIMs in
 the output directory — sorted by title, one `<book>` element each with id,
-title, description, language, creator, publisher, name, tags, date,
+title, description, language, creator, publisher, name, tags, category, date,
 `articleCount`, `mediaCount`, `size` and the base64 favicon:
 
 ```xml
 <library version="20110515">
   <book id="0c2d1f59-…" path="gutenberg-11-alice-s-adventures-in-wonderland.zim"
-        title="Alice's Adventures in Wonderland" language="eng" … />
+        title="Alice's Adventures in Wonderland" language="eng" category="literature" … />
 </library>
 ```
 
@@ -194,6 +223,7 @@ Unreadable files are skipped rather than aborting the write.
 | `alexandria/archaic.py`     | Archaic English → modern English rewrite            |
 | `alexandria/zim.py`         | libzim writing, metadata, verification              |
 | `alexandria/archive.py`     | Reading ZIMs without libzim's stray stderr notices  |
+| `alexandria/classification.py` | LCC class → Kiwix shelf category               |
 | `alexandria/formats.py`     | PDF/TeX editions converted to parseable HTML         |
 | `alexandria/library.py`     | Kiwix `library.xml` generation                       |
 | `alexandria/workflow.py`    | Per-book orchestration and error isolation          |

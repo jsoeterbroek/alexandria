@@ -22,7 +22,7 @@ class BookMeta:
     rights: str
     description: str
     source_url: str
-    downloads: int | None = None
+    lcc: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

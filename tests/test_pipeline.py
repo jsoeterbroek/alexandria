@@ -25,6 +25,7 @@ from libzim.search import Query, Searcher
 
 from alexandria.archaic import modernize_soup, modernize_text
 from alexandria.archive import open_archive
+from alexandria.classification import category_for, category_from_tags
 from alexandria.cli import main
 from alexandria.config import BookSpec, Config, ConfigError, load_config
 from alexandria.document import MAX_ARTICLE_BYTES, parse_book
@@ -41,6 +42,7 @@ RDF = """<?xml version="1.0" encoding="utf-8"?>
   xmlns:pgterms="http://www.gutenberg.org/2009/pgterms/"
   xmlns:dcterms="http://purl.org/dc/terms/"
   xmlns:marcrel="http://id.loc.gov/vocabulary/relators/"
+  xmlns:dcam="http://purl.org/dc/dcam/"
   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
   <pgterms:ebook rdf:about="ebooks/999">
     <dcterms:title>Testable Tales</dcterms:title>
@@ -54,6 +56,12 @@ RDF = """<?xml version="1.0" encoding="utf-8"?>
     <dcterms:subject>
       <rdf:Description rdf:nodeID="s1"><rdf:value>Fiction</rdf:value></rdf:Description>
     </dcterms:subject>
+    <dcterms:subject>
+      <rdf:Description rdf:nodeID="s2">
+        <dcam:memberOf rdf:resource="http://purl.org/dc/terms/LCC"/>
+        <rdf:value>PR</rdf:value>
+      </rdf:Description>
+    </dcterms:subject>
     <dcterms:creator>
       <pgterms:agent rdf:about="2009/agents/1">
         <pgterms:name>Doe, Jane</pgterms:name>
@@ -64,7 +72,6 @@ RDF = """<?xml version="1.0" encoding="utf-8"?>
         <pgterms:name>Roe, Richard</pgterms:name>
       </pgterms:agent>
     </marcrel:trl>
-    <pgterms:downloads rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">42</pgterms:downloads>
   </pgterms:ebook>
 </rdf:RDF>
 """
@@ -130,7 +137,7 @@ def make_meta(**overrides) -> BookMeta:
         "rights": "Public domain in the USA.",
         "description": "A test book.",
         "source_url": "https://www.gutenberg.org/ebooks/999",
-        "downloads": 42,
+        "lcc": ("PR",),
     }
     defaults.update(overrides)
     return BookMeta(**defaults)
@@ -164,14 +171,78 @@ class MetadataTest(unittest.TestCase):
         self.assertEqual(meta.creators, ("Doe, Jane",))
         self.assertEqual(meta.contributors, ("Roe, Richard",))
         self.assertEqual(meta.subjects, ("Fiction",))
+        self.assertEqual(meta.lcc, ("PR",))
         self.assertEqual(meta.language3, "eng")
         self.assertEqual(meta.language_label, "English")
-        self.assertEqual(meta.downloads, 42)
         self.assertEqual(meta.issued, "2020-01-02")
 
     def test_missing_rdf(self) -> None:
         with self.assertRaises(GutenbergError):
             load_rdf(Path("/nonexistent/pg1.rdf"), "1")
+
+
+class ClassificationTest(unittest.TestCase):
+    def test_maps_lcc_class_to_category(self) -> None:
+        cases = {
+            "QA": "science",
+            "QH": "science",
+            "DG": "history",
+            "JC": "political_science",
+            "B": "philosophy",
+            "U": "military",
+        }
+        for code, expected in cases.items():
+            self.assertEqual(category_for((code,)), expected, code)
+
+    def test_literature_split_into_subclasses(self) -> None:
+        cases = {
+            "PR": "english_literature",
+            "PS": "american_literature",
+            "PA": "classical_literature",
+            "PQ": "romance_literature",
+            "PG": "slavic_literature",
+            "PJ": "middle_eastern_literature",
+            "PT": "germanic_literature",
+            "PZ": "childrens_literature",
+            "PE": "english_language",
+        }
+        for code, expected in cases.items():
+            self.assertEqual(category_for((code,)), expected, code)
+
+    def test_unlisted_literature_subclass_falls_back(self) -> None:
+        # P is valid but PX has no label of its own.
+        self.assertEqual(category_for(("PX",)), "literature")
+
+    def test_first_known_code_wins(self) -> None:
+        # Gutenberg lists the primary classification first; PZ is secondary.
+        self.assertEqual(category_for(("PR", "PZ")), "english_literature")
+        self.assertEqual(category_for(("XX", "QA")), "science")
+
+    def test_classification_ignores_trailing_digits(self) -> None:
+        self.assertEqual(category_for(("PR4034",)), "english_literature")
+        self.assertEqual(category_for(("QA76.73",)), "science")
+
+    def test_unknown_or_missing_codes_have_no_category(self) -> None:
+        self.assertEqual(category_for(()), "")
+        self.assertEqual(category_for(("XX",)), "")
+        self.assertEqual(category_for(("",)), "")
+        self.assertEqual(category_for(("1234",)), "")
+
+    def test_categories_are_single_xapian_tokens(self) -> None:
+        # libkiwix indexes the category by whitespace-splitting it but filters
+        # with the raw string as one term, so a space makes the dropdown entry
+        # unfilterable; a hyphen is indexed as a separate term for the same reason.
+        codes = [f"{letter}A" for letter in "ABCDEFGHJKLMNPQRSTUVZ"]
+        codes += [f"P{letter}" for letter in "ABCDEFGHKLMNQRSTZ"]
+        for code in codes:
+            category = category_for((code,))
+            self.assertRegex(category, r"^[a-z_]+$", code)
+
+    def test_category_from_tags(self) -> None:
+        tags = "_category:english_literature;_ftindex:yes;_pictures:yes;_videos:no;_details:yes"
+        self.assertEqual(category_from_tags(tags), "english_literature")
+        self.assertEqual(category_from_tags("_ftindex:yes;_details:yes"), "")
+        self.assertEqual(category_from_tags("_category:science"), "science")
 
 
 class ConfigTest(unittest.TestCase):
@@ -519,7 +590,10 @@ class ZimTest(unittest.TestCase):
         self.assertEqual(archive.get_metadata("Language"), b"eng")
         self.assertEqual(archive.get_metadata("Creator"), b"Doe, Jane")
         self.assertIn(b"Fiction", archive.get_metadata("Keywords"))
-        self.assertEqual(archive.get_metadata("Tags"), b"_ftindex:yes;_pictures:yes;_videos:no;_details:yes")
+        self.assertEqual(
+            archive.get_metadata("Tags"),
+            b"_category:english_literature;_ftindex:yes;_pictures:yes;_videos:no;_details:yes",
+        )
         self.assertEqual(archive.get_entry_by_path("index.html").title, "Testable Tales")
 
         for entry_id in range(archive.entry_count):
@@ -827,7 +901,10 @@ class LibraryTest(unittest.TestCase):
         self.assertEqual(entry.get("creator"), "Doe, Jane")
         self.assertEqual(entry.get("publisher"), "Project Gutenberg")
         self.assertEqual(entry.get("articleCount"), str(len(book.pages)))
-        self.assertEqual(entry.get("tags"), "_ftindex:yes;_pictures:yes;_videos:no;_details:yes")
+        self.assertEqual(
+            entry.get("tags"), "_category:english_literature;_ftindex:yes;_pictures:yes;_videos:no;_details:yes"
+        )
+        self.assertEqual(entry.get("category"), "english_literature")
         self.assertTrue(entry.get("id"))
         self.assertTrue(int(entry.get("size")) >= 1)
 

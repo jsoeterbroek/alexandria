@@ -19,6 +19,8 @@ _DC = "{http://purl.org/dc/terms/}"
 _PG = "{http://www.gutenberg.org/2009/pgterms/}"
 _RDF = "{http://www.w3.org/1999/02/22-rdf-syntax-ns#}"
 _MARC = "{http://id.loc.gov/vocabulary/relators/}"
+_DCAM = "{http://purl.org/dc/dcam/}"
+_LCC = "http://purl.org/dc/terms/LCC"
 
 RDF_URL = "https://www.gutenberg.org/cache/epub/{id}/pg{id}.rdf"
 HTML_URLS = (
@@ -69,6 +71,46 @@ def _agent_names(root: ET.Element, namespace: str, tag: str) -> list[str]:
     return names
 
 
+def _subject_headings(root: ET.Element) -> tuple[str, ...]:
+    """Return the human-readable subject headings from a Gutenberg record.
+
+    Every ``dcterms:subject`` value is returned except the Library of Congress
+    classifications, which reuse the same element with ``dcam:memberOf`` set to
+    ``…/LCC`` and hold a shelf code ("PR", "QA") rather than a heading.
+    """
+    headings: list[str] = []
+    for subject in root.findall(f".//{_DC}subject", _RDF_NS):
+        for description in subject.findall(f".//{_RDF}Description", _RDF_NS):
+            member = description.find(_DCAM + "memberOf", _RDF_NS)
+            if member is not None and member.get(f"{_RDF}resource") == _LCC:
+                continue
+            value = description.find(_RDF + "value", _RDF_NS)
+            if value is not None:
+                text = " ".join("".join(value.itertext()).split())
+                if text:
+                    headings.append(text)
+    return tuple(dict.fromkeys(headings))
+
+
+def _classifications(root: ET.Element) -> tuple[str, ...]:
+    """Return the LCC codes attached to a Gutenberg record, in document order.
+
+    Gutenberg nests them as ``dcterms:subject`` → description with
+    ``dcam:memberOf`` pointing at ``http://purl.org/dc/terms/LCC``; the code
+    itself ("PR", "QA") is the sibling ``rdf:value``.
+    """
+    codes: list[str] = []
+    for subject in root.findall(f".//{_DC}subject", _RDF_NS):
+        for description in subject.findall(f".//{_RDF}Description", _RDF_NS):
+            member = description.find(_DCAM + "memberOf", _RDF_NS)
+            if member is None or member.get(f"{_RDF}resource") != _LCC:
+                continue
+            value = description.find(_RDF + "value", _RDF_NS)
+            if value is not None and value.text and value.text.strip():
+                codes.append(value.text.strip())
+    return tuple(dict.fromkeys(codes))
+
+
 def load_rdf(path: Path, book_id: str) -> BookMeta:
     """Parse a Gutenberg RDF record into ``BookMeta``."""
     try:
@@ -78,7 +120,7 @@ def load_rdf(path: Path, book_id: str) -> BookMeta:
 
     title = next(iter(_texts(root, _DC + "title")), "") or f"Project Gutenberg ebook {book_id}"
     languages = _texts(root, _DC + "language//" + _RDF + "value") or ["en"]
-    subjects = tuple(dict.fromkeys(_texts(root, _DC + "subject//" + _RDF + "value")))
+    subjects = _subject_headings(root)
     issued = next(iter(_texts(root, _DC + "issued")), "")
     rights = next(iter(_texts(root, _DC + "rights")), "")
 
@@ -88,12 +130,6 @@ def load_rdf(path: Path, book_id: str) -> BookMeta:
         for name in _agent_names(root, _MARC, role):
             if name not in creators and name not in contributors:
                 contributors.append(name)
-
-    downloads = None
-    for element in root.findall(f".//{_PG}downloads", _RDF_NS):
-        if element.text and element.text.strip().isdigit():
-            downloads = int(element.text.strip())
-            break
 
     code3 = iso639_3(languages[0])
     label = language_label(code3, languages[0])
@@ -114,7 +150,7 @@ def load_rdf(path: Path, book_id: str) -> BookMeta:
         rights=rights or "Public domain in the USA.",
         description=description or f"Project Gutenberg ebook #{book_id}.",
         source_url=f"https://www.gutenberg.org/ebooks/{book_id}",
-        downloads=downloads,
+        lcc=_classifications(root),
     )
 
 

@@ -8,6 +8,7 @@ from pathlib import Path
 from libzim.writer import Creator, FileProvider, Hint, Item, StringProvider
 
 from .archive import open_archive
+from .classification import category_for
 from .document import ParsedBook
 from .models import Asset, Page
 
@@ -123,12 +124,25 @@ def _add_metadata(creator: Creator, book: ParsedBook) -> None:
     creator.add_metadata("Date", meta.issued)
     creator.add_metadata("Scraper", "alexandria")
     creator.add_metadata("Source", meta.source_url)
-    creator.add_metadata("Tags", "_ftindex:yes;_pictures:yes;_videos:no;_details:yes")
+    creator.add_metadata("Tags", tags_for_book(book))
     creator.add_metadata("License", "Public domain in the USA.")
     if meta.subjects:
         creator.add_metadata("Keywords", "; ".join(meta.subjects))
     if meta.contributors:
         creator.add_metadata("Contributor", "; ".join(meta.contributors))
+
+
+def tags_for_book(book: ParsedBook) -> str:
+    """Kiwix tag string for ``book``: shelf category first, then the flags.
+
+    ``tags_for_book`` is the single source of truth for the tag list, so the
+    ZIM metadata and the ``library.xml`` fallback cannot drift apart.
+    """
+    tags = ["_ftindex:yes", "_pictures:yes", "_videos:no", "_details:yes"]
+    category = category_for(book.meta.lcc)
+    if category:
+        tags.insert(0, f"_category:{category}")
+    return ";".join(tags)
 
 
 def verify_zim(path: Path, main_path: str | None = None) -> None:
