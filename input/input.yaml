@@ -393,7 +393,7 @@ books:
     author: "Robert W. Chambers"
     build: false
   - id: 8800
-    title: "The divine comedy"  # top-100 #97
+    title: "The Divine Comedy"  # top-100 #97
     author: "Dante Alighieri"
   - id: 9550
     title: "Manual of Gardening"  # rebuild list
@@ -544,7 +544,7 @@ books:
     title: "De Re Metallica"  # rebuild list
     author: "Georg Agricola"
   - id: 38326
-    title: "Bede's Ecclesiastical History of England"  # rebuild list
+    title: "Ecclesiastical History of the English People"  # rebuild list
     author: "the Venerable Bede"
   - id: 39713
     title: "The Foundations of Science"
