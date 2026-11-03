@@ -219,6 +219,9 @@ books:
   - id: 2000
     title: "Don Quijote"  # top-100 #95
     author: "Miguel de Cervantes"
+  - id: 2040
+    title: "Confessions of an English Opium-Eater"
+    author: "Thomas De Quincey"
   - id: 2147
     title: "The Works of Edgar Allan Poe — Volume 1"
     author: "Edgar Allan Poe"
