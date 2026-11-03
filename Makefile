@@ -1,10 +1,11 @@
 # Alexandria workflow. Run `make` (or `make help`) for the target list.
 UV ?= uv
 DESCRIPTOR ?= input/input.yaml
+LIBRARYPATH = output/library.xml
 PYTHON ?= $(UV) run python
 
 .DEFAULT_GOAL := help
-.PHONY: help sync build build_all list library verify test lint fmt fmt-check check clean refresh only
+.PHONY: help sync build build_all list library verify test lint fmt fmt-check check clean refresh only serve
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -48,6 +49,9 @@ check: lint fmt-check test ## Lint, format check and test
 
 refresh: sync ## Re-download cached Gutenberg resources and rebuild everything
 	$(UV) run alexandria $(DESCRIPTOR) --refresh --force
+
+serve: ## Serve the library with kiwix-serve on port 8080
+	kiwix-serve --port=8080 --monitorLibrary --library $(LIBRARYPATH)
 
 clean: ## Remove generated ZIM files, library.xml and bytecode
 	rm -f output/*.zim output/*.zim.part output/library.xml

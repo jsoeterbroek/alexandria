@@ -14,6 +14,7 @@ make build_all     # rebuild every book, overwriting existing ZIMs
 make only ID=11    # (re)build one book
 make list          # books in the descriptor
 make library       # refresh output/library.xml
+make serve         # kiwix-serve on :8080, watching output/library.xml
 make verify        # integrity-check output/*.zim
 make test          # offline test suite
 make check         # lint + format check + tests
@@ -213,6 +214,7 @@ Point Kiwix at it directly:
 
 ```bash
 make library                       # refresh it without rebuilding
+make serve                         # kiwix-serve :8080, --monitorLibrary
 kiwix-serve --library output/library.xml
 uv run alexandria --library        # same thing from the CLI
 ```
