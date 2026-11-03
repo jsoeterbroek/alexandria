@@ -139,6 +139,9 @@ books:
   - id: 521
     title: "The Life and Adventures of Robinson Crusoe"  # rebuild list
     author: "Daniel Defoe"
+  - id: 657
+    title: "The Anglo-Saxon Chronicle"
+    author: "J. Ingram, J. A. Giles"
   - id: 766
     title: "David Copperfield"  # rebuild list
     author: "Charles Dickens"
@@ -163,6 +166,9 @@ books:
     build: false
   - id: 1170
     title: "Anabasis"
+    author: "Xenophon"
+  - id: 1174
+    title: "Hellenica"
     author: "Xenophon"
   - id: 1184
     title: "The Count of Monte Cristo"  # top-100 #22
@@ -414,6 +420,15 @@ books:
   - id: 12916
     title: "The Secret History of the Court of Justinian"
     author: "Procopius"
+  - id: 14033
+    title: "Plutarch's Lives, Volume 1 (of 4)"
+    author: "Plutarch"
+  - id: 14114
+    title: "Plutarch's Lives, Volume 2 (of 4)"
+    author: "Plutarch"
+  - id: 14140
+    title: "Plutarch's Lives, Volume 3 (of 4)"
+    author: "Plutarch"
   - id: 14591
     title: "Faust, Part I"  # rebuild list
     author: "Johann Wolfgang von Goethe"
@@ -546,6 +561,9 @@ books:
     title: "The Steam Engine Explained and Illustrated"  # rebuild list
     author: "Dionysius Lardner"
     build: false
+  - id: 44315
+    title: "Plutarch's Lives, Volume 4 (of 4)"
+    author: "Plutarch"
   - id: 45188
     title: "The International Development of China"  # top-100 #84
     author: "Sun Yat-sen"
@@ -625,6 +643,9 @@ books:
     title: "Domestic Medicine"  # rebuild list
     author: "William Buchan"
     build: false
+  - id: 74955
+    title: "History of the Franks"
+    author: "Gregory Bishop of Tours"
   - id: 75201
     title: "A farewell to arms"
     author: "Ernest Hemingway"
