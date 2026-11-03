@@ -259,6 +259,9 @@ books:
   - id: 2456
     title: "The History of Herodotus — Volume 2"
     author: "Herodotus"
+  - id: 2500
+    title: "Siddhartha"
+    author: "Herman Hesse"
   - id: 2542
     title: "A Doll's House : a play"  # top-100 #54
     author: "Henrik Ibsen"
@@ -667,3 +670,6 @@ books:
   - id: 75201
     title: "A farewell to arms"
     author: "Ernest Hemingway"
+  - id: 75756
+    title: "Steppenwolf"
+    author: "Herman Hesse"
