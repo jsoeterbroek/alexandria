@@ -142,6 +142,9 @@ books:
   - id: 657
     title: "The Anglo-Saxon Chronicle"
     author: "J. Ingram, J. A. Giles"
+  - id: 711
+    title: "Allan Quatermain"
+    author: "H. Rider Haggard"
   - id: 766
     title: "David Copperfield"  # rebuild list
     author: "Charles Dickens"
@@ -235,6 +238,9 @@ books:
     title: "The Expedition of Humphry Clinker"  # top-100 #46
     author: "Tobias Smollett"
     build: false
+  - id: 2166
+    title: "King Solomon's Mines"
+    author: "H. Rider Haggard"
   - id: 2199
     title: "The Iliad"
     author: "Homer"
@@ -284,6 +290,9 @@ books:
   - id: 2852
     title: "The Hound of the Baskervilles"  # top-100 #81
     author: "Arthur Conan Doyle"
+  - id: 3155
+    title: "She"
+    author: "H. Rider Haggard"
   - id: 3207
     title: "Leviathan"  # top-100 #33
     author: "Thomas Hobbes"
@@ -385,6 +394,9 @@ books:
     title: "Second Treatise of Government"  # top-100 #62
     author: "John Locke"
     build: false
+  - id: 7849
+    title: "The Trial"
+    author: "Franz Kafka"
   - id: 8438
     title: "The Nicomachean Ethics of Aristotle"  # rebuild list
     author: "Aristotle"
