@@ -16,6 +16,7 @@ make list          # books in the descriptor
 make library       # refresh output/library.xml
 make serve         # kiwix-serve on :8080, watching output/library.xml
 make verify        # integrity-check output/*.zim
+make check-toc     # audit every archive's table of contents
 make test          # offline test suite
 make check         # lint + format check + tests
 ```
@@ -116,7 +117,7 @@ only text nodes change. Spelling and dialect stay as printed.
 
 CLI flags: `-o/--output`, `-c/--cache`, `--refresh` (ignore the cache),
 `--force` (rebuild existing ZIMs), `--only ID`, `--list`, `--library [XML]`,
-`--verify`.
+`--verify`, `--check-toc [--offline]`.
 
 ### Incremental builds
 
@@ -129,6 +130,28 @@ everything; `make refresh` also re-downloads the cached Gutenberg files.
 ## What ends up in a ZIM
 
 - `index.html` — title page with metadata, subjects and a nested table of contents.
+
+### Table of contents
+
+Gutenberg's editions disagree about how a book is structured, and taking the
+markup at face value is what used to produce wrong contents: a chapter heading
+may be a bare numeral (`I`), a division may be numbered in words (`THE FIRST
+BOOK`) instead of `BOOK I`, or dozens of stories may share one `div.chapter` per
+volume. Alexandria therefore splits the book at the edition's *own* contents
+page whenever there is a usable one — its entry titles, order and nesting
+(bold part/volume lines parent the chapters under them) drive the articles —
+and falls back to `div.chapter` wrappers, then to section headings, when the
+ebook has no such page. Nested wrappers are descended into, and the printed
+chapter lists that follow a contents page stay with the article they introduce
+instead of becoming stub pages.
+
+`make check-toc` (`uv run alexandria --check-toc output/*.zim`) audits the
+result: every entry must resolve to an existing article and anchor, titles
+must not be placeholders (`[Pg 12]`, `ibid`, `Untitled`), no entry may repeat,
+nesting may not skip a level, and every article has to appear once. Each index
+is then compared entry by entry with the edition currently published on
+gutenberg.org, so a stale cached download cannot hide a wrong structure.
+`--offline` skips that network comparison.
 - `chapter/NNN.html` — one article per chapter; part/book dividers are merged
   into the following chapter so no article is heading-only.
 - `media/*` — every referenced image, plus the Gutenberg cover.
@@ -231,6 +254,7 @@ Unreadable files are skipped rather than aborting the write.
 | `alexandria/gutenberg.py`   | RDF metadata, edition discovery, cover lookup        |
 | `alexandria/net.py`         | Cached HTTP fetching with retries                   |
 | `alexandria/document.py`    | Gutenberg HTML → pages, media, table of contents    |
+| `alexandria/toc.py`         | Table-of-contents audit, including gutenberg.org     |
 | `alexandria/archaic.py`     | Archaic English → modern English rewrite            |
 | `alexandria/zim.py`         | libzim writing, metadata, verification              |
 | `alexandria/archive.py`     | Reading ZIMs without libzim's stray stderr notices  |

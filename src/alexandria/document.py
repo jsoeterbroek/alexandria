@@ -49,8 +49,36 @@ _SECTION_WORDS = (
     "afterword",
 )
 _SECTION_RE = re.compile(r"^\s*(" + "|".join(_SECTION_WORDS) + r")\b", re.IGNORECASE)
-_ROMAN_RE = re.compile(r"^\s*[IVXLCDM]+\.\s+\S", re.IGNORECASE)
+_ORDINALS = (
+    "first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|nineth|tenth|"
+    "eleventh|twelfth|thirteenth|fourteenth|fifteenth|sixteenth|seventeenth|"
+    "eighteenth|nineteenth|twentieth|last|\\d+(?:st|nd|rd|th)"
+)
+# "THE FIRST BOOK", "Book the Second", "Part One": Gutenberg's older editions
+# number their divisions with ordinals instead of numerals.
+_ORDINAL_RE = re.compile(
+    r"^\s*(?:(?:the|his|her|my|our|its)\s+)?(?:"
+    + _ORDINALS
+    + r")\s+(book|part|volume|section|canto|act|scene|letter)\b",
+    re.IGNORECASE,
+)
+# A bare numeral heading ("I", "XIV.") is a chapter marker; the descriptive
+# chapter title usually follows in the next heading (Candide).
+_ROMAN_RE = re.compile(r"^\s*[IVXLCDM]+\.?\s*$", re.IGNORECASE)
+# "CONTENTS", "CONTENTS.", "BOOKS", "Contents of the First Volume",
+# "Table of Contents for Ebooks 731-736".
+_CONTENTS_RE = re.compile(r"^\s*(?:table\s+of\s+)?(?:contents|books)\b", re.IGNORECASE)
 _DEPTH = {"part": 0, "volume": 0, "book": 1, "section": 1}
+_TOC_DEPTH = {
+    "part": 0,
+    "volume": 0,
+    "book": 1,
+    "section": 1,
+    "act": 1,
+    "scene": 1,
+    "canto": 1,
+    "letter": 1,
+}
 _SKIP_HEADINGS = {
     "contents",
     "table of contents",
@@ -120,6 +148,25 @@ class Section:
     nodes: list[Tag]
     path: str = ""
     depth: int = 2
+    toc_title: str | None = None
+
+
+@dataclass(frozen=True)
+class ContentsEntry:
+    """One line of the book's own table of contents."""
+
+    title: str
+    depth: int
+    target: Tag
+    division: bool = False
+
+
+@dataclass
+class ContentsBlock:
+    """A contents page found in the book."""
+
+    heading: str
+    entries: list[ContentsEntry]
 
 
 @dataclass
@@ -164,10 +211,11 @@ def parse_book(
     for style in soup.find_all("style"):
         style.decompose()
 
-    sections = _split_sections(_content_nodes(soup))
+    nodes = _content_nodes(soup)
+    contents = _declared_contents(soup, nodes)
+    sections = _split_sections(nodes, contents)
     if not sections:
         raise ValueError(f"no readable content found in {source_url}")
-
     _assign_paths(sections)
     anchors = _anchor_map(sections)
     seen: dict[str, str] = {cover.zim_path: cover.url} if cover else {}
@@ -176,7 +224,7 @@ def parse_book(
     for asset in ([cover] if cover else []) + content_assets:
         assets.setdefault(asset.zim_path, asset)
 
-    toc = _collect_toc(sections)
+    toc = _collect_toc(sections, contents)
     pages = [
         Page(
             path=section.path,
@@ -249,8 +297,11 @@ def _heading_text(node: Tag) -> str:
         return ""
     for extra in clone.select("span.caption, img, a.fnanchor, a.footnote, .pagenum, span.pagenum"):
         extra.decompose()
+    # Empty link targets carry no title; anchors that wrap the heading text
+    # itself ("<a id=\"link1\">STAVE ONE.</a>") must survive.
     for anchor in clone.find_all("a", id=True):
-        anchor.decompose()
+        if not anchor.get_text(" ", strip=True):
+            anchor.decompose()
     text = re.sub(r"\s+", " ", clone.get_text(" ", strip=True)).strip()
     # Trailing page markers such as "[2137]" carry no title value.
     return re.sub(r"\s*(\[\d+\]|\{\d+\})$", "", text).strip()
@@ -262,44 +313,407 @@ def _is_section_head(node: Tag) -> bool:
     text = _heading_text(node)
     if not text or text.lower() in _SKIP_HEADINGS:
         return False
-    return bool(_SECTION_RE.match(text) or _ROMAN_RE.match(text))
+    return bool(_SECTION_RE.match(text) or _ORDINAL_RE.match(text) or _ROMAN_RE.match(text))
 
 
-def _split_sections(nodes: list[Tag]) -> list[Section]:
-    """Group body nodes into sections, keeping front matter separate."""
-    chapter_divs = sum(1 for node in nodes if "chapter" in (node.get("class") or []))
-    groups: list[list[Tag]] = []
+def _is_chapter_div(node: Tag) -> bool:
+    """True for Gutenberg's ``<div class="chapter">`` wrapper."""
+    return node.name in ("div", "section") and "chapter" in (node.get("class") or [])
+
+
+def _is_contents_heading(node: Tag) -> bool:
+    return node.name in _HEADINGS and bool(_CONTENTS_RE.match(_heading_text(node)))
+
+
+def _clean_label(text: str) -> str:
+    text = re.sub(r"\[Pg[^\]]*\]", " ", text)
+    text = re.sub(r"\bPage\s+[\divxlcdm]+\b", " ", text, flags=re.IGNORECASE)
+    text = re.sub(r"\s+", " ", text).strip()
+    return re.sub(r"[\s.,;:—–-]+$", "", text)
+
+
+_TOC_CELL_RE = re.compile(
+    r"(?:[\divxlcdmIVXLCDM]+\.?|page\s+[\divxlcdmIVXLCDM]+|facing(?:\s+\d+)?|\[?\d+\]?)",
+    re.IGNORECASE,
+)
+
+
+def _row_label(link: Tag) -> str:
+    """Title from the table row holding a contents link (Candide, Gregory).
+
+    Contents tables lay a row out as "I. | How Candide was brought up… | 1", and
+    the link sometimes wraps only the page number. The title is the longest
+    non-numeric cell; a chapter numeral beside it is kept so the index reads like
+    the printed page ("I. How Candide…", not the bare body heading).
+    """
+    row = link.find_parent("tr")
+    if row is None or len(row.find_all("a", href=True)) > 1:
+        # A single table cell may hold a whole list of works, one per line.
+        return _clean_label(link.get_text(" ", strip=True))
+    cells = [_clean_label(cell.get_text(" ", strip=True)) for cell in row.find_all(["td", "th"])]
+    cells = [cell for cell in cells if cell]
+    titles = [cell for cell in cells if not _TOC_CELL_RE.fullmatch(cell)]
+    if not titles:
+        return _clean_label(link.get_text(" ", strip=True))
+    title = max(titles, key=len)
+    marker = next((cell for cell in cells if cell != title and re.match(r"^[IVXLCDM]+\.?$", cell)), "")
+    return f"{marker} {title}" if marker else title
+
+
+def _inline_tail(link: Tag) -> str:
+    """Text after a link up to the next line break ("I. </a> THE THREE…")."""
+    parts: list[str] = []
+    for sibling in link.next_siblings:
+        if isinstance(sibling, Tag) and sibling.name == "br":
+            break
+        parts.append(sibling.get_text(" ", strip=True) if isinstance(sibling, Tag) else str(sibling))
+        if sum(len(part) for part in parts) > 300:
+            break
+    return _clean_label(" ".join(parts))
+
+
+def _is_division_link(link: Tag, title: str) -> bool:
+    """True when a contents line labels a part/volume rather than a chapter.
+
+    Gutenberg's contents pages set part and volume lines in bold (``<b>VOLUME
+    I.</b>``, ``<b>FIRST PART.</b>``) while chapter lines stay plain, so the
+    markup itself tells the nesting levels apart.
+    """
+    if re.match(r"^\s*(?:part|volume)\b", title, re.IGNORECASE):
+        return True
+    return link.find_parent(["b", "strong"]) is not None or link.find(["b", "strong"]) is not None
+
+
+def _entries_between(heading: Tag) -> tuple[list[tuple[str, str, int, bool]], set[int]]:
+    """``(fragment, title, depth, division)`` for the links under ``heading``."""
+    level = int(heading.name[1])
+    found: list[tuple[str, str, int, bool]] = []
+    region: set[int] = set()
+    for element in heading.find_all_next():
+        if not isinstance(element, Tag):
+            continue
+        if element.name in _HEADINGS and int(element.name[1]) <= level:
+            break
+        region.add(id(element))
+        href = (element.get("href") or "").strip() if element.name == "a" else ""
+        if not href.startswith("#"):
+            continue
+        fragment = href[1:]
+        label = _row_label(element)
+        if len(re.findall(r"[A-Za-z]", label)) < 3:
+            # "I. </a> THE THREE METAMORPHOSES." puts the title outside the link.
+            tail = _inline_tail(element)
+            if tail:
+                label = _clean_label(f"{label} {tail}" if label else tail)
+        if not fragment or not label or _PLACEHOLDER_RE.match(label):
+            continue
+        if re.fullmatch(r"[IVXLCDM]+\.?", label):
+            # "III. </a> BACKWORLDSMEN." on a separate line: the title follows.
+            label = _clean_label(f"{label} {_inline_tail(element)}")
+        found.append((fragment, label, _title_depth(label), _is_division_link(element, label)))
+    return found, region
+
+
+_PLACEHOLDER_RE = re.compile(r"^(?:ibid|page\s+[\divxlcdm]+|\d+|\[\d+\])$", re.IGNORECASE)
+
+
+_MARKER_RE = re.compile(
+    r"^\s*(?:(?:chapter|part|book|volume|section|canto|act|scene|letter|stave|prologue|"
+    r"epilogue|appendix|preface|introduction|notes|index)\b\.?|[ivxlcdm]+\.|\d+\.)\s*",
+    re.IGNORECASE,
+)
+
+
+def _norm_title(text: str) -> str:
+    stripped = _MARKER_RE.sub("", text).strip()
+    text = stripped or text  # "NOTES" is a title, not a "notes" marker
+    return re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
+
+
+def _title_matches(heading: Tag, title: str) -> bool:
+    text = _norm_title(_heading_text(heading))
+    wanted = _norm_title(title)
+    if not text or not wanted:
+        return False
+    return text == wanted or (len(wanted) > 6 and wanted in text) or (len(text) > 6 and text in wanted)
+
+
+def _resolve_entry(
+    fragment: str,
+    title: str,
+    window: tuple[int, int],
+    positions: dict[int, int],
+    anchors: dict[str, Tag],
+) -> Tag | None:
+    """Article start for one contents entry.
+
+    Entries link either to the heading itself (modern Gutenberg) or to an
+    invisible page anchor just above it, sometimes several paragraphs early
+    (Gregory of Tours links to the chapter list that opens the page, not to
+    the book text). Prefer the nearest heading that carries the entry's own
+    title, else the first section-style heading before the next entry.
+    """
+    anchor = anchors.get(fragment)
+    if anchor is None:
+        return None
+    for parent in anchor.parents:
+        if parent.name in _HEADINGS:
+            return parent
+    # The anchor often sits below its chapter heading, inside the same wrapper
+    # (a page marker under "<h2>NOTES</h2>").
+    for parent in anchor.parents:
+        if not _is_chapter_div(parent):
+            continue
+        heading = parent.find(_HEADINGS)
+        if heading is not None and _title_matches(heading, title):
+            return heading
+        break
+    fallback: Tag | None = None
+    current = anchor
+    while True:
+        current = current.find_next(True)
+        if current is None:
+            break
+        index = positions.get(id(current))
+        if index is None or index >= window[1]:
+            break
+        if current.name in _HEADINGS:
+            if _title_matches(current, title):
+                return current
+            if fallback is None and _is_section_head(current):
+                fallback = current
+    return fallback
+
+
+def _declared_contents(soup: BeautifulSoup, nodes: list[Tag]) -> ContentsBlock | None:
+    """Return the book's own table of contents when it can drive the split.
+
+    A block qualifies when every entry resolves inside the body of the book and
+    the entries run forward through the document. That keeps a "CONTENTS" list
+    of front matter only, and the alphabetical index Gutenberg prints beside
+    the real contents (Maupassant), from deciding where articles start.
+    """
+    order = {id(element): index for index, element in enumerate(soup.find_all(True))}
+    anchors: dict[str, Tag] = {}
+    for element in soup.find_all(True):
+        for attribute in ("id", "name"):
+            value = element.get(attribute)
+            if value:
+                anchors.setdefault(value, element)
+    content = {id(node) for node in nodes}
+    for node in nodes:
+        content.update(id(element) for element in node.find_all(True))
+
+    def in_body(element: Tag) -> bool:
+        return id(element) in content or any(id(parent) in content for parent in element.parents)
+
+    blocks: list[ContentsBlock] = []
+    for heading in soup.find_all(_HEADINGS):
+        if not _is_contents_heading(heading):
+            continue
+        raw, region = _entries_between(heading)
+        if len(raw) < 3:
+            continue
+        bounds = [order.get(id(anchors[row[0]]), -1) for row in raw]
+        if any(bound < 0 for bound in bounds):
+            continue
+        entries: list[ContentsEntry] = []
+        for index, (fragment, title, depth, division) in enumerate(raw):
+            window = (bounds[index], bounds[index + 1] if index + 1 < len(bounds) else len(order))
+            target = _resolve_entry(fragment, title, window, order, anchors)
+            # An entry whose heading is not where the list says belongs to the
+            # preceding article; dropping it is safer than splitting mid-text.
+            if target is None or not in_body(target) or any(entry.target is target for entry in entries):
+                continue
+            entries.append(ContentsEntry(title=title, depth=depth, target=target, division=division))
+        if len(entries) < 3:
+            continue
+        positions = [order[id(entry.target)] for entry in entries]
+        if any(later < earlier for earlier, later in zip(positions, positions[1:], strict=False)):
+            continue
+        # Links that all point inside the listing itself are an index of its own
+        # page numbers, not a table of contents (Gutenberg prints an alphabetical
+        # index beside Maupassant's real contents).
+        if all(id(entry.target) in region for entry in entries):
+            continue
+        if positions[-1] < len(order) * 0.4:
+            continue
+        blocks.append(ContentsBlock(heading=_heading_text(heading), entries=entries))
+
+    # A multi-volume ebook prints one contents page per volume (Don Quixote);
+    # together they describe the book, and they must not overlap.
+    blocks.sort(key=lambda block: order[id(block.entries[0].target)])
+    merged: list[ContentsEntry] = []
+    for block in blocks:
+        first = order[id(block.entries[0].target)]
+        if merged and first <= order[id(merged[-1].target)]:
+            continue
+        merged.extend(block.entries)
+    if len(merged) < 3:
+        return None
+    seen: set[int] = set()
+    unique: list[ContentsEntry] = []
+    for entry in merged:
+        if id(entry.target) in seen:
+            continue
+        seen.add(id(entry.target))
+        unique.append(entry)
+    return ContentsBlock(heading=blocks[0].heading if blocks else "", entries=_depth_entries(unique))
+
+
+def _depth_entries(entries: list[ContentsEntry]) -> list[ContentsEntry]:
+    """Assign nesting levels from the contents page itself.
+
+    Part and volume lines are set in bold, chapter lines are not; a contents
+    page with no such dividers (Candide, Gregory of Tours) is a flat list.
+    """
+    nested = any(entry.division for entry in entries)
+    seen_division = False
+    levelled: list[ContentsEntry] = []
+    for entry in entries:
+        seen_division = seen_division or entry.division
+        depth = 2 if nested and seen_division and not entry.division else 1
+        levelled.append(ContentsEntry(title=entry.title, depth=depth, target=entry.target, division=entry.division))
+    return levelled
+
+
+def _article_starts(nodes: list[Tag], contents: ContentsBlock | None) -> dict[int, Tag]:
+    """Elements that start a new article, keyed by object id.
+
+    The declared contents page names the articles when it describes the whole
+    book, and structural boundaries are added for chapters it does not list
+    (Gulliver lists only its voyages, Don Quixote only its second volume). Those
+    extras must carry real prose: title pages, copyright notices and printed
+    chapter lists between the contents page and the first chapter stay with the
+    front matter instead of becoming stub articles.
+    """
+    if contents is not None:
+        starts: dict[int, Tag] = {}
+        declared = {id(entry.target) for entry in contents.entries}
+        for entry in contents.entries:
+            owner = _chapter_owner(entry.target, declared)
+            starts[id(owner)] = owner
+        first = _document_order(contents.entries[0].target)
+        for node in _descendants(nodes):
+            if not _is_chapter_div(node) or id(node) in starts:
+                continue
+            if _document_order(node) <= first:
+                continue
+            if not _opens_article(node):
+                continue
+            starts[id(node)] = node
+        return starts
+    starts = {
+        id(node): node
+        for node in _descendants(nodes)
+        if _is_chapter_div(node) and not any(_is_chapter_div(child) for child in node.find_all(True))
+    }
+    starts = _expand_containers(starts)
+    if starts:
+        return starts
+    return {id(node): node for node in _descendants(nodes) if _is_section_head(node) or _is_contents_heading(node)}
+
+
+def _expand_containers(starts: dict[int, Tag]) -> dict[int, Tag]:
+    """Replace a container that swallows several chapters by those chapters.
+
+    Some ebooks wrap the entire book in a single ``div.chapter`` (Gregory of
+    Tours); taking that wrapper as one article would collapse the book into a
+    single page, so the section headings inside it become the boundaries.
+    """
+    expanded: dict[int, Tag] = {}
+    for start in starts.values():
+        headings = [heading for heading in start.find_all(_HEADINGS) if _is_section_head(heading)]
+        if len(headings) > 1:
+            expanded.update({id(heading): heading for heading in headings})
+        else:
+            expanded[id(start)] = start
+    return expanded
+
+
+def _document_order(node: Tag) -> int:
+    """Position of ``node`` among its document's tags."""
+    root = node
+    while root.parent is not None:
+        root = root.parent
+    for index, element in enumerate(root.find_all(True)):
+        if element is node:
+            return index
+    return -1
+
+
+def _opens_article(node: Tag) -> bool:
+    """True for a chapter wrapper with a heading and prose of its own."""
+    heading = node.find(_HEADINGS)
+    if heading is None or not _is_section_head(heading):
+        return False
+    if any(_is_contents_heading(child) for child in node.find_all(_HEADINGS)):
+        return False
+    if _is_listing(node):
+        return False
+    words = len(node.get_text(" ", strip=True).split())
+    return words >= 40
+
+
+def _is_listing(node: Tag) -> bool:
+    """True for a wrapper that is a printed list of chapters, not prose."""
+    lists = node.find_all(["ul", "ol"])
+    if not lists:
+        return False
+    listed = sum(len(entry.get_text(" ", strip=True).split()) for entry in lists)
+    total = len(node.get_text(" ", strip=True).split())
+    return total > 0 and listed * 4 >= total * 3
+
+
+def _chapter_owner(target: Tag, declared: set[int]) -> Tag:
+    """Chapter wrapper that contains ``target`` and no other declared entry."""
+    for parent in target.parents:
+        if not _is_chapter_div(parent):
+            continue
+        if sum(1 for member in [parent, *parent.find_all(True)] if id(member) in declared) <= 1:
+            return parent
+    return target
+
+
+def _descendants(nodes: list[Tag]):
+    for node in nodes:
+        yield node
+        yield from node.find_all(True)
+
+
+def _split_sections(nodes: list[Tag], contents: ContentsBlock | None = None) -> list[Section]:
+    """Group body nodes into sections, keeping front matter separate.
+
+    Article boundaries come from the book's own contents page when it has a
+    usable one, else from ``div.chapter`` wrappers, else from section headings.
+    Nested wrappers are descended into, so a volume-level container (Maupassant)
+    or one wrapper around the whole book (Gregory of Tours) still yields one
+    article per chapter instead of one article per container.
+    """
+    starts = _article_starts(nodes, contents)
+    # A book with no headings at all (some dictionaries, Principia) still has to
+    # become articles, so chunking treats the whole body as one long article.
+    pieces = _segments(nodes, starts, None) if starts else [(True, list(nodes))]
     front: list[Tag] = []
-
-    if chapter_divs >= 2:
-        for node in nodes:
-            if "chapter" in (node.get("class") or []):
-                groups.append([node])
-            elif groups:
-                groups[-1].append(node)
+    groups: list[list[Tag]] = []
+    for opened, tags in pieces:
+        if opened or groups:
+            if opened:
+                groups.append(tags)
             else:
-                front.append(node)
-    else:
-        current: list[Tag] = []
-        started = False
-        for node in nodes:
-            if _is_section_head(node):
-                if current:
-                    groups.append(current)
-                current = [node]
-                started = True
-            else:
-                current.append(node)
-        if current:
-            groups.append(current)
-        if started and groups and not _has_section_head(groups[0]):
-            front, groups = groups[0], groups[1:]
+                groups[-1].extend(tags)
+        else:
+            front.extend(tags)
 
     # Heading-only dividers ("PART I", "Book II") become part of the next
-    # article so the archive has no empty pages, but their headings stay.
+    # article so the archive has no empty pages, but their headings stay. A
+    # wrapper with no text at all (Gutenberg leaves empty chapter divs behind)
+    # is dropped rather than turned into an empty article.
     merged: list[list[Tag]] = []
     pending: list[Tag] = []
     for group in groups:
+        if not any(node.get_text(" ", strip=True) or node.find("img") for node in group):
+            continue
         if _is_divider(group):
             pending.extend(group)
             continue
@@ -308,6 +722,8 @@ def _split_sections(nodes: list[Tag]) -> list[Section]:
     if pending:
         if merged:
             merged[-1].extend(pending)
+        elif front:
+            front.extend(pending)
         else:
             merged.append(pending)
 
@@ -315,11 +731,103 @@ def _split_sections(nodes: list[Tag]) -> list[Section]:
     if front:
         sections.append(Section(title="Front matter", nodes=front, depth=1))
     for group in merged:
-        base = _section_title(group)
-        depth = _title_depth(base)
+        entries = _contents_entries(group, contents)
+        if entries:
+            deepest = max(entries, key=lambda entry: entry.depth)
+            base = deepest.title
+            depth = deepest.depth
+        else:
+            base = _section_title(group)
+            depth = _title_depth(base)
+        if not any(node.get_text(" ", strip=True) for node in group) and not entries:
+            continue  # cover-only wrapper: the cover is an illustration already
         for index, chunk in enumerate(_chunk_nodes(group)):
-            sections.append(Section(title=_chunk_title(chunk, base, index), nodes=chunk, depth=depth))
+            title = base if entries else _chunk_title(chunk, base, index)
+            sections.append(Section(title=title, nodes=chunk, depth=depth, toc_title=base))
+    _normalise_depths(sections)
     return sections
+
+
+def _normalise_depths(sections: list[Section]) -> None:
+    """Shift article levels so the shallowest body article is level 1.
+
+    A contents page that marks only chapters (Candide, Gregory of Tours) would
+    otherwise indent every article one level under the front page.
+    """
+    body = [section.depth for section in sections if section.title != "Front matter"]
+    if not body:
+        return
+    shift = min(body) - 1
+    if not shift:
+        return
+    for section in sections:
+        if section.title != "Front matter":
+            section.depth = max(section.depth - shift, 1)
+
+
+def _segments(nodes: list[Tag], starts: dict[int, Tag], wrapper: Tag | None) -> list[tuple[bool, list[Tag]]]:
+    """Split ``nodes`` at the start elements, cloning the wrappers around them.
+
+    Returns ``(opened, tags)`` pairs; ``opened`` is true when ``tags`` begin an
+    article at a start element. Leading tags before the first start come back as
+    a single unopened segment so they can become the front matter.
+    """
+    pieces: list[tuple[bool, list[Tag]]] = []
+    current: list[Tag] = []
+
+    def flush() -> None:
+        if current:
+            pieces.append((False, _wrap_all(wrapper, list(current))))
+            current.clear()
+
+    for node in nodes:
+        started = id(node) in starts
+        nested = _contains_start(node, starts)
+        if not started and not nested:
+            current.append(node)
+            continue
+        flush()
+        if started and not nested:
+            pieces.append((True, _wrap_all(wrapper, [node])))
+            continue
+        leading: list[Tag] = []
+        rest: list[Tag] = []
+        for child in _element_children(node):
+            if rest or id(child) in starts or _contains_start(child, starts):
+                rest.append(child)
+            else:
+                leading.append(child)
+        if started:
+            pieces.append((True, _wrap_all(wrapper, _wrap_all(node, leading))))
+        elif leading:
+            pieces.append((False, _wrap_all(wrapper, _wrap_all(node, leading))))
+        for child_started, tags in _segments(rest, starts, node):
+            pieces.append((child_started, _wrap_all(wrapper, tags)))
+    flush()
+    return [piece for piece in pieces if piece[1]]
+
+
+def _contains_start(node: Tag, starts: dict[int, Tag]) -> bool:
+    return any(id(child) in starts for child in node.find_all(True))
+
+
+def _wrap_all(wrapper: Tag | None, children: list[Tag]) -> list[Tag]:
+    if not children:
+        return []
+    if wrapper is None:
+        return children
+    clone = Tag(name=wrapper.name, attrs={key: value for key, value in wrapper.attrs.items() if key != "id"})
+    for child in children:
+        clone.append(child.extract())
+    return [clone]
+
+
+def _contents_entries(group: list[Tag], contents: ContentsBlock | None) -> list[ContentsEntry]:
+    """Declared entries whose anchors fall inside ``group``, in book order."""
+    if contents is None:
+        return []
+    members = {id(element) for node in group for element in [node, *node.find_all(True)]}
+    return [entry for entry in contents.entries if id(entry.target) in members]
 
 
 def _is_divider(group: list[Tag]) -> bool:
@@ -438,8 +946,12 @@ def _chunk_title(chunk: list[Tag], base: str, index: int) -> str:
     titles = [(heading, _heading_text(heading)) for heading in leading]
     titles = [(heading, text) for heading, text in titles if text and text.lower() not in _SKIP_HEADINGS]
     if titles:
-        deepest = max(_title_depth(text) for _heading, text in titles)
-        for _heading, text in reversed(titles):
+        # A wrapper's own heading ("HELL OR THE INFERNO") is often plain prose
+        # while the real unit below it is a canto or chapter; that unit wins.
+        section = [(heading, text) for heading, text in titles if _is_section_head(heading)]
+        pool = section or titles
+        deepest = max(_title_depth(text) for _heading, text in pool)
+        for _heading, text in reversed(pool):
             if _title_depth(text) == deepest:
                 return text
 
@@ -476,10 +988,14 @@ def _section_title(group: list[Tag]) -> str:
 
 
 def _title_depth(title: str) -> int:
+    """Nesting level implied by a heading: parts/volumes above chapters."""
     match = _SECTION_RE.match(title)
-    if not match:
-        return 2
-    return _DEPTH.get(match.group(1).lower(), 1)
+    if match:
+        return _DEPTH.get(match.group(1).lower(), 1)
+    ordinal = _ORDINAL_RE.match(title)
+    if ordinal:
+        return _DEPTH.get(ordinal.group(1).lower(), 1)
+    return 2
 
 
 def _assign_paths(sections: list[Section]) -> None:
@@ -505,28 +1021,97 @@ def _anchor_map(sections: list[Section]) -> dict[str, str]:
     return anchors
 
 
-def _collect_toc(sections: list[Section]) -> list[TocEntry]:
-    """Build a nested table of contents from the article headings.
+def _collect_toc(sections: list[Section], contents: ContentsBlock | None = None) -> list[TocEntry]:
+    """Build the front page table of contents.
 
-    Part/book dividers contribute their own, shallower entries, so the index
-    mirrors the structure of the book instead of a flat chapter list.
+    With a declared contents page the index reproduces it entry for entry, so
+    the reader sees the printed structure — volumes, parts, chapter numerals —
+    even where the articles themselves are titled differently. Otherwise the
+    index mirrors the section headings.
     """
     entries: list[TocEntry] = []
+    owners = _section_owners(sections)
+    heads: dict[str, Tag] = {}
     for section in sections:
-        headings = _group_headings(section.nodes)
-        candidates = [heading for heading in headings if _is_section_head(heading)]
-        if section.title == "Front matter" or not candidates:
+        heads[section.path] = section.nodes[0] if section.nodes else None
+    if contents is not None:
+        for entry in contents.entries:
+            path = owners.get(id(entry.target))
+            if path is None:
+                continue
+            entries.append(TocEntry(depth=entry.depth, title=entry.title, href=_entry_href(path, entry.target, heads)))
+        front = next((section for section in sections if section.title == "Front matter"), None)
+        if front is not None:
+            entries.insert(0, TocEntry(depth=0, title=front.title, href=front.path))
+        return entries
+
+    for section in sections:
+        if section.title == "Front matter":
+            entries.append(TocEntry(depth=0, title=section.title, href=section.path))
+            continue
+        headings = [heading for heading in _group_headings(section.nodes) if _is_section_head(heading)]
+        if not headings:
             entries.append(TocEntry(depth=section.depth, title=section.title, href=section.path))
             continue
-        for heading in candidates:
+        for heading in headings:
             title = _heading_text(heading)
-            anchor = heading.get("id")
-            if anchor is None:
-                link = heading.find("a", id=True)
-                anchor = link.get("id") if link else None
+            anchor = _heading_anchor(heading)
             href = f"{section.path}#{anchor}" if anchor else section.path
             entries.append(TocEntry(depth=_title_depth(title), title=title, href=href))
-    return entries
+    return _nest(entries)
+
+
+def _entry_href(path: str, target: Tag, heads: dict[str, Tag]) -> str:
+    """Link to the entry's own anchor unless it already opens the article."""
+    first = heads.get(path)
+    if first is None:
+        return path
+    if target is first or target in first.find_all(True):
+        return path
+    anchor = target.get("id")
+    if anchor is None:
+        link = target.find("a", id=True)
+        anchor = link.get("id") if link else None
+    return f"{path}#{anchor}" if anchor else path
+
+
+def _heading_anchor(heading: Tag) -> str | None:
+    if heading.get("id"):
+        return heading.get("id")
+    link = heading.find("a", id=True)
+    return link.get("id") if link else None
+
+
+def _section_owners(sections: list[Section]) -> dict[int, str]:
+    """Map every element inside an article to that article's path."""
+    owners: dict[int, str] = {}
+    for section in sections:
+        for node in section.nodes:
+            owners[id(node)] = section.path
+            for element in node.find_all(True):
+                owners[id(element)] = section.path
+    return owners
+
+
+def _nest(entries: list[TocEntry]) -> list[TocEntry]:
+    """Map heading depths onto consecutive levels starting at 1.
+
+    Headline levels are only relative: a book's chapters may all be ``h2`` while
+    its parts are ``h2`` as well (Treasure Island), and the index title can be an
+    ``h1`` that would otherwise outrank them. Ranking the distinct levels keeps
+    the nesting intact and leaves no gap for the front page to render.
+    """
+    body = {entry.depth for entry in entries if entry.title != "Front matter"}
+    if not body:
+        return entries
+    levels = {depth: rank + 1 for rank, depth in enumerate(sorted(body))}
+    nested: list[TocEntry] = []
+    previous = 0
+    for entry in entries:
+        depth = 0 if entry.title == "Front matter" else min(levels[entry.depth], previous + 1)
+        nested.append(TocEntry(depth=depth, title=entry.title, href=entry.href))
+        previous = depth
+    return nested
 
 
 # --------------------------------------------------------------------------- #

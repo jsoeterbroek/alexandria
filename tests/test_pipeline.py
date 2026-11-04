@@ -6,6 +6,7 @@ Run with ``uv run python -m unittest discover -s tests``.
 from __future__ import annotations
 
 import contextlib
+import html as html_lib
 import io
 import os
 import posixpath
@@ -19,7 +20,7 @@ from pathlib import Path
 from unittest import mock
 from xml.etree import ElementTree as ET
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from libzim.reader import Archive
 from libzim.search import Query, Searcher
 
@@ -28,11 +29,12 @@ from alexandria.archive import open_archive
 from alexandria.classification import category_for, category_from_tags
 from alexandria.cli import main
 from alexandria.config import BookSpec, Config, ConfigError, load_config
-from alexandria.document import MAX_ARTICLE_BYTES, parse_book
+from alexandria.document import MAX_ARTICLE_BYTES, ContentsBlock, ContentsEntry, parse_book
 from alexandria.formats import tex_to_html, text_to_html
 from alexandria.gutenberg import GutenbergError, iso639_3, load_rdf
 from alexandria.library import LIBRARY_NAME, LIBRARY_VERSION, write_library
-from alexandria.models import BookMeta
+from alexandria.models import BookMeta, Page
+from alexandria.toc import audit_archive, compare_with_online, entries_from_archive
 from alexandria.util import human_size, slugify, url_cache_key
 from alexandria.workflow import BookReport, Workflow, _apply_overrides
 from alexandria.zim import build_zim
@@ -572,6 +574,149 @@ class ParsingTest(unittest.TestCase):
         self.assertIn("Headword 399", joined)
 
 
+def toc_entries(book) -> list[tuple[int, str, str]]:
+    """(depth, title, href) for every entry on the front page."""
+    index = next(page for page in book.pages if page.path == "index.html")
+    return [
+        (int(depth), html_lib.unescape(title), href)
+        for depth, href, title in re.findall(r'<li class="depth-(\d)"><a href="([^"]+)">([^<]+)</a></li>', index.body)
+    ]
+
+
+class ContentsPageTest(unittest.TestCase):
+    """The index reproduces the book's own table of contents.
+
+    Gutenberg books disagree about how a chapter looks: a bare "I", a hidden
+    heading, a `div.chapter` per chapter or one wrapper per volume. Whenever the
+    ebook prints a contents page, its entries decide the article titles and
+    nesting, so the ZIM does not depend on those layout accidents.
+    """
+
+    def parse(self, html: str):
+        media_dir = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        return parse_book(html, make_meta(), "https://example.test/book.html", media_dir, fake_fetch({}))
+
+    def test_bare_numeral_chapters_take_their_titles_from_the_contents_page(self) -> None:
+        html = """<html><body><h1>Roman Chapters</h1>
+        <h2>CONTENTS</h2>
+        <table>
+          <tr><td>CHAPTER</td><td></td><td>PAGE</td></tr>
+          <tr><td>I.</td><td>How the hero was born</td><td><a href="#Page_1">1</a></td></tr>
+          <tr><td>II.</td><td>What became of him</td><td><a href="#Page_9">9</a></td></tr>
+          <tr><td>III.</td><td>He returns home</td><td><a href="#Page_17">17</a></td></tr>
+        </table>
+        <p><span><a id="Page_1">[Pg 1]</a></span></p>
+        <h2>I</h2><p>Born under a lucky star.</p>
+        <p><span><a id="Page_9">[Pg 9]</a></span></p>
+        <h2>II</h2><p>He travelled far and wide.</p>
+        <p><span><a id="Page_17">[Pg 17]</a></span></p>
+        <h2>III</h2><p>He came home again.</p>
+        </body></html>"""
+        book = self.parse(html)
+        entries = toc_entries(book)
+        self.assertEqual(
+            [title for _depth, title, _href in entries],
+            ["Front matter", "I How the hero was born", "II What became of him", "III He returns home"],
+        )
+        chapters = [page for page in book.pages if page.path.startswith("chapter/")]
+        self.assertEqual(len(chapters), 3, "each contents entry is one article")
+        self.assertEqual(chapters[0].title, "I How the hero was born")
+        self.assertIn("Born under a lucky star", chapters[0].body)
+        self.assertNotIn("He travelled far", chapters[0].body)
+
+    def test_nested_volume_wrappers_split_at_the_volumes_chapters(self) -> None:
+        html = """<html><body><h1>Stories</h1>
+        <h2>CONTENTS IN EACH VOLUME</h2>
+        <p class="toc"><a href="#vol1"><b>VOLUME I.</b></a></p>
+        <p class="toc"><a href="#s1">First Story</a></p>
+        <p class="toc"><a href="#s2">Second Story</a></p>
+        <p class="toc"><a href="#vol2"><b>VOLUME II.</b></a></p>
+        <p class="toc"><a href="#s3">Third Story</a></p>
+        <div class="volume">
+          <h2><a id="vol1"></a>VOLUME I.</h2>
+          <h2><a id="s1"></a>First Story</h2><p>Once upon a time.</p>
+          <h2><a id="s2"></a>Second Story</h2><p>And then again.</p>
+          <h2><a id="vol2"></a>VOLUME II.</h2>
+          <h2><a id="s3"></a>Third Story</h2><p>Finally, the end.</p>
+        </div>
+        </body></html>"""
+        book = self.parse(html)
+        entries = toc_entries(book)
+        titles = [title for _depth, title, _href in entries]
+        self.assertIn("VOLUME I", titles)
+        self.assertIn("VOLUME II", titles)
+        self.assertIn("Third Story", titles)
+        depths = {title: depth for depth, title, _href in entries}
+        self.assertLess(depths["VOLUME I"], depths["First Story"], "volumes nest above their stories")
+        self.assertEqual(depths["Third Story"], depths["First Story"], "stories of both volumes are siblings")
+        chapters = [page for page in book.pages if page.path.startswith("chapter/")]
+        self.assertIn("Third Story", [page.title for page in chapters])
+
+    def test_one_wrapper_around_the_whole_book_is_descended_into(self) -> None:
+        html = """<html><body>
+        <div class="chapter">
+          <h1>History</h1>
+          <h2 id="CONTENTS">CONTENTS</h2>
+          <table><tr><td><a href="#Page_1">Book I</a></td><td><a href="#Page_19">19</a></td></tr>
+                 <tr><td><a href="#Page_19">Book II</a></td><td>51</td></tr>
+                 <tr><td><a href="#Page_51">Book III</a></td><td>73</td></tr></table>
+          <p><span id="Page_1">[Pg 1]</span></p>
+          <h2>First Book</h2><p>The Franks enter history.</p>
+          <p><span id="Page_19">[Pg 19]</span></p>
+          <h2>Second Book</h2><p>They carry on.</p>
+          <p><span id="Page_51">[Pg 51]</span></p>
+          <h2>Third Book</h2><p>The story ends.</p>
+        </div>
+        </body></html>"""
+        book = self.parse(html)
+        chapters = [page for page in book.pages if page.path.startswith("chapter/")]
+        self.assertEqual(len(chapters), 3, "a single outer wrapper must not swallow the book")
+        self.assertEqual([page.title for page in chapters], ["Book I", "Book II", "Book III"])
+        self.assertIn("They carry on", chapters[1].body)
+
+    def test_alphabetical_index_is_not_mistaken_for_the_contents(self) -> None:
+        html = """<html><body><h1>Stories</h1>
+        <h2>CONTENTS IN ALPHABETICAL ORDER</h2>
+        <p><a id="a">[ A ]</a></p>
+        <p><a href="#s1">APPLE</a></p>
+        <p><a id="b">[ B ]</a></p>
+        <p><a href="#s2">BANANA</a></p>
+        <p><a id="c">[ C ]</a></p>
+        <p><a href="#s3">CHERRY</a></p>
+        <h2><a href="#a">A</a></h2>
+        <h2><a href="#b">B</a></h2>
+        <h2><a href="#c">C</a></h2>
+        <h2><a id="s1"></a>APPLE</h2><p>An apple story.</p>
+        <h2><a id="s2"></a>BANANA</h2><p>A banana story.</p>
+        <h2><a id="s3"></a>CHERRY</h2><p>A cherry story.</p>
+        </body></html>"""
+        book = self.parse(html)
+        titles = [title for _depth, title, _href in toc_entries(book)]
+        self.assertEqual(titles, ["Front matter", "APPLE", "BANANA", "CHERRY"])
+        self.assertNotIn("A", titles)
+
+    def test_hidden_headings_still_split_articles(self) -> None:
+        html = """<html><body><h1>Franks</h1>
+        <div class="chapter"><h2 style="display: none; visibility: hidden;">First Book</h2></div>
+        <p>First book prose.</p>
+        <div class="chapter"><h2 style="display: none; visibility: hidden;">Second Book</h2></div>
+        <p>Second book prose.</p>
+        </body></html>"""
+        book = self.parse(html)
+        chapters = [page for page in book.pages if page.path.startswith("chapter/")]
+        self.assertEqual([page.title for page in chapters], ["First Book", "Second Book"])
+
+    def test_empty_wrapper_is_not_an_article(self) -> None:
+        html = """<html><body><h1>Wrapped</h1>
+        <div class="chapter"></div>
+        <div class="chapter"><h2>Chapter I</h2><p>Real content.</p></div>
+        </body></html>"""
+        book = self.parse(html)
+        chapters = [page for page in book.pages if page.path.startswith("chapter/")]
+        self.assertEqual([page.title for page in chapters], ["Chapter I"])
+        self.assertNotIn("Untitled", [page.title for page in book.pages])
+
+
 class OverrideTest(unittest.TestCase):
     """Descriptor title/author overrides reach the ZIM and its description."""
 
@@ -654,6 +799,58 @@ class ZimTest(unittest.TestCase):
         search = Searcher(archive).search(Query().set_query("unicorn"))
         self.assertEqual(search.get_estimated_matches(), 1)
         self.assertEqual([result.path for result in search.get_results(0, 5)], ["chapter/002.html"])
+
+
+class TocAuditTest(unittest.TestCase):
+    """`alexandria --check-toc` finds broken, stale or mis-nested indexes."""
+
+    def build(self, html: str):
+        media_dir = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        book = parse_book(html, make_meta(), "https://example.test/book.html", media_dir, fake_fetch({}))
+        target = media_dir / "out.zim"
+        build_zim(target, book)
+        return target, book
+
+    def test_clean_archive_passes(self) -> None:
+        target, _book = self.build(MODERN_HTML)
+        issues = audit_archive(Archive(target))
+        self.assertEqual([issue.message for issue in issues], [])
+
+    def test_placeholder_titles_and_missing_articles_are_reported(self) -> None:
+        _target, book = self.build(MODERN_HTML)
+        index = next(page for page in book.pages if page.path == "index.html")
+        tampered = index.body.replace("Chapter I. The First", "[Pg 42]").replace(
+            'href="chapter/002.html#chap02"', 'href="chapter/999.html"'
+        )
+        book.pages = [Page(path=index.path, title=index.title, body=tampered)] + [
+            page for page in book.pages if page.path != index.path
+        ]
+        target = Path(self.enterContext(tempfile.TemporaryDirectory())) / "tampered.zim"
+        build_zim(target, book)
+        messages = [issue.message for issue in audit_archive(Archive(target))]
+        self.assertTrue(any("placeholder title" in message for message in messages), messages)
+        self.assertTrue(any("missing article" in message for message in messages), messages)
+
+    def test_online_comparison_reports_drift(self) -> None:
+        target, _book = self.build(MODERN_HTML)
+        entries = entries_from_archive(Archive(target))
+        contents = ContentsBlock(
+            heading="Contents",
+            entries=[
+                ContentsEntry(title="PART I", depth=1, target=Tag(name="h2")),
+                ContentsEntry(title="Chapter I. The First", depth=2, target=Tag(name="h2")),
+                ContentsEntry(title="Chapter II. A Different Title", depth=2, target=Tag(name="h2")),
+            ],
+        )
+        messages = [issue.message for issue in compare_with_online(entries, contents)]
+        self.assertTrue(any("a different title" in message.lower() for message in messages), messages)
+
+    def test_cli_check_toc_exits_nonzero_on_defects(self) -> None:
+        target, _book = self.build(MODERN_HTML)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+            self.assertEqual(main(["--offline", "--check-toc", str(target)]), 0)
+        self.assertIn("OK", out.getvalue())
 
 
 class ArchiveNoticeTest(unittest.TestCase):

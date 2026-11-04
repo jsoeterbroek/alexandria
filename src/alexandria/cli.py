@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from dataclasses import replace
 from pathlib import Path
 
+from .archive import open_archive
 from .config import ConfigError, load_config
 from .library import LIBRARY_NAME, write_library
+from .net import Fetcher
+from .toc import TocIssue, audit_archive, compare_with_online, entries_from_archive, online_contents
 from .workflow import Workflow
 from .zim import verify_zim
 
@@ -56,6 +60,20 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="ZIM",
         help="verify existing ZIM files and exit",
     )
+    parser.add_argument(
+        "--check-toc",
+        nargs="+",
+        metavar="ZIM",
+        help=(
+            "audit the tables of contents of these ZIM files and exit; each index is also "
+            "compared with the edition currently published on gutenberg.org"
+        ),
+    )
+    parser.add_argument(
+        "--offline",
+        action="store_true",
+        help="with --check-toc, skip the comparison against gutenberg.org",
+    )
     return parser
 
 
@@ -65,6 +83,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.verify:
         return _verify(args.verify)
+
+    if args.check_toc:
+        return _check_toc(args.check_toc, online=not args.offline)
 
     try:
         config = load_config(Path(args.descriptor))
@@ -135,6 +156,44 @@ def _verify(paths: list[Path]) -> int:
         else:
             print(f"OK   {path}")
     return 1 if failures else 0
+
+
+def _check_toc(requests: list[str], online: bool = True) -> int:
+    """Audit each ZIM's table of contents, optionally against gutenberg.org."""
+    fetcher = Fetcher(cache_dir=Path("cache")) if online else None
+    failures = 0
+    for request in requests:
+        path = Path(request)
+        if not path.is_file():
+            print(f"error: {request}: not a file", file=sys.stderr)
+            failures += 1
+            continue
+        archive = open_archive(path)
+        issues = audit_archive(archive)
+        book_id = _book_id(archive, path)
+        if fetcher is not None and book_id is not None:
+            try:
+                contents = online_contents(book_id, fetcher)
+            except Exception as exc:  # noqa: BLE001 - offline use must still audit structure
+                issues.append(TocIssue("warning", f"could not compare with gutenberg.org: {exc}"))
+            else:
+                issues.extend(compare_with_online(entries_from_archive(archive), contents))
+        problems = [issue for issue in issues if issue.severity == "error"]
+        for issue in issues:
+            stream = sys.stderr if issue.severity == "error" else sys.stdout
+            print(f"{issue.severity.upper():<7} {path.name}: {issue.message}", file=stream)
+        print(f"{'FAIL' if problems else 'OK'}   {path}")
+        failures += bool(problems)
+    return 1 if failures else 0
+
+
+def _book_id(archive, path: Path) -> str | None:
+    source = archive.get_metadata("Source").decode("utf-8", "replace")
+    match = re.search(r"/ebooks/(\d+)", source)
+    if match:
+        return match.group(1)
+    match = re.search(r"gutenberg-(\d+)-", path.name)
+    return match.group(1) if match else None
 
 
 if __name__ == "__main__":

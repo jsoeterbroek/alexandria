@@ -5,7 +5,7 @@ LIBRARYPATH = output/library.xml
 PYTHON ?= $(UV) run python
 
 .DEFAULT_GOAL := help
-.PHONY: help sync build build_all list library verify test lint fmt fmt-check check clean refresh only serve
+.PHONY: help sync build build_all list library verify check-toc test lint fmt fmt-check check clean refresh only serve
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -32,6 +32,9 @@ library: sync ## (Re)write output/library.xml from the built ZIM files
 
 verify: sync ## Check the integrity of every built archive
 	$(UV) run alexandria --verify output/*.zim
+
+check-toc: sync ## Audit the table of contents of every built archive
+	$(UV) run alexandria --check-toc output/*.zim
 
 test: sync ## Run the offline test suite
 	$(UV) run python -m unittest discover -s tests -v
