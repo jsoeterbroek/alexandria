@@ -408,6 +408,9 @@ books:
   - id: 7142
     title: "The History of the Peloponnesian War"  # rebuild list
     author: "Thucydides"
+  - id: 7178
+    title: "Swann's Way"
+    author: "Marcel Proust"
   - id: 7370
     title: "Second Treatise of Government"  # top-100 #62
     author: "John Locke"
@@ -645,6 +648,9 @@ books:
     title: "A Biblia Sagrada, Contendo o Velho e o Novo Testamento"  # top-100 #87
     author: "Various"
     build: false
+  - id: 63532
+    title: "Within a Budding Grove"
+    author: "Marcel Proust"
   - id: 64317
     title: "The Great Gatsby"  # top-100 #16
     author: "F. Scott Fitzgerald"
@@ -684,6 +690,9 @@ books:
   - id: 73181
     title: "The shadow over Innsmouth"
     author: "H. P. Lovecraft"
+  - id: 73425
+    title: "The Guermantes Way"
+    author: "Marcel Proust"
   - id: 73533
     title: "The poetic Edda"
     author: "H. A. Bellows"
