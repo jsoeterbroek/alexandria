@@ -296,6 +296,9 @@ books:
   - id: 2852
     title: "The Hound of the Baskervilles"  # top-100 #81
     author: "Arthur Conan Doyle"
+  - id: 3090
+    title: "Complete Short Stories"
+    author: "Guy De Maupassant"
   - id: 3155
     title: "She"
     author: "H. Rider Haggard"
