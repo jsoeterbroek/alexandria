@@ -603,6 +603,12 @@ books:
     title: "The Steam Engine Explained and Illustrated"  # rebuild list
     author: "Dionysius Lardner"
     build: false
+  - id: 44125
+    title: "The Histories of Polybius, Volume 1 (of 2)"
+    author: "Polybius"
+  - id: 44126
+    title: "The Histories of Polybius, Volume 2 (of 2)"
+    author: "Polybius"
   - id: 44315
     title: "Plutarch's Lives, Volume 4 (of 4)"
     author: "Plutarch"
