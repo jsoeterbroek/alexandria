@@ -462,6 +462,18 @@ books:
   - id: 14986
     title: "Experimental Researches in Electricity, Volume 1"  # rebuild list
     author: "Michael Faraday"
+  - id: 15474
+    title: "The Mahabharata - Volume 1"
+    author: "Kisari Mohan Ganguli"
+  - id: 15475
+    title: "The Mahabharata - Volume 2"
+    author: "Kisari Mohan Ganguli"
+  - id: 15476
+    title: "The Mahabharata - Volume 3"
+    author: "Kisari Mohan Ganguli"
+  - id: 15477
+    title: "The Mahabharata - Volume 4"
+    author: "Kisari Mohan Ganguli"
   - id: 16328
     title: "Beowulf: An Anglo-Saxon Epic Poem"  # top-100 #43
     author: "Anonymous"
