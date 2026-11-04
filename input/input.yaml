@@ -61,6 +61,9 @@ books:
   - id: 55
     title: "The Wonderful Wizard of Oz"  # top-100 #38
     author: "L. Frank Baum"
+  - id: 61
+    title: "The Communist Manifesto"
+    author: "Karl Marx and Friedrich Engels"
   - id: 74
     title: "The Adventures of Tom Sawyer, Complete"  # top-100 #27
     author: "Mark Twain"
