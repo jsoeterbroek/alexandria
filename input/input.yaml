@@ -103,6 +103,9 @@ books:
     title: "Emma"  # top-100 #63
     author: "Jane Austen"
     build: false
+  - id: 159
+    title: "The Island of Dr Moreau"
+    author: "H. G. Wells"
   - id: 174
     title: "The Picture of Dorian Gray"  # top-100 #12
     author: "Oscar Wilde"
