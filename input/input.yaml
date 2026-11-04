@@ -281,6 +281,9 @@ books:
   - id: 2600
     title: "War and Peace"  # top-100 #28
     author: "Leo Tolstoy"
+  - id: 2638
+    title: "The Idiot"
+    author: "Fyodor Dostoevsky"
   - id: 2641
     title: "A Room with a View"  # top-100 #18
     author: "E. M. Forster"
