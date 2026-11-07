@@ -259,6 +259,9 @@ books:
   - id: 2383
     title: "The Canterbury Tales, and Other Poems"  # rebuild list
     author: "Geoffrey Chaucer"
+  - id: 2413
+    title: "Madame Bovary"
+    author: "Gustave Flaubert"
   - id: 2429
     title: "Lost Face"
     author: "Jack London"
@@ -594,6 +597,24 @@ books:
   - id: 38326
     title: "Ecclesiastical History of the English People"  # rebuild list
     author: "the Venerable Bede"
+  - id: 39301
+    title: "Memoirs Vol. I (of VI), Venetian Years"
+    author: "Giacomo Casanova"
+  - id: 39302
+    title: "Memoirs Vol. II (of VI), To Paris and Prison"
+    author: "Giacomo Casanova"
+  - id: 39303
+    title: "Memoirs Vol. III (of VI), The Eternal Quest"
+    author: "Giacomo Casanova"
+  - id: 39304
+    title: "Memoirs Vol. IV (of VI), Adventures in the South"
+    author: "Giacomo Casanova"
+  - id: 39305
+    title: "Memoirs Vol. V (of VI), In London and Moscow"
+    author: "Giacomo Casanova"
+  - id: 39306
+    title: "Memoirs Vol. VI (of VI), Spanish Passions"
+    author: "Giacomo Casanova"
   - id: 39713
     title: "The Foundations of Science"
     author: "Henri Poincaré"
