@@ -216,6 +216,12 @@ books:
   - id: 1727
     title: "The Odyssey"  # top-100 #30
     author: "Homer"
+  - id: 1754
+    title: "The sea-gull"
+    author: "Anton Chekhov"
+  - id: 1756
+    title: "Uncle Vanya"
+    author: "Anton Chekhov"
   - id: 1952
     title: "The Yellow Wallpaper"  # top-100 #21
     author: "Charlotte Perkins Gilman"
@@ -661,6 +667,9 @@ books:
   - id: 50133
     title: "The Dunwich horror"
     author: "H. P. Lovecraft"
+  - id: 57333
+    title: "Short Stories"
+    author: "Anton Chekhov"
   - id: 61985
     title: "Harrods for Everything"  # top-100 #64
     author: "Harrods Ltd."
