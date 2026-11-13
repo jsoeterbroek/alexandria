@@ -550,10 +550,12 @@ books:
     title: "Spoon River Anthology"  # top-100 #71
     author: "Edgar Lee Masters"
     build: false
+  - id: 27673
+    title: "Oedipus King of Thebes"
+    author: "Sophocles"
   - id: 27827
     title: "The Kama Sutra of Vatsyayana"  # top-100 #85
     author: "Vatsyayana"
-    build: false
   - id: 28054
     title: "The Brothers Karamazov"  # top-100 #69
     author: "Fyodor Dostoevsky"
@@ -635,7 +637,9 @@ books:
   - id: 42602
     title: "The Steam Engine Explained and Illustrated"  # rebuild list
     author: "Dionysius Lardner"
-    build: false
+  - id: 43383
+    title: "Galen: On the Natural Faculties"
+    author: "Galen"
   - id: 44125
     title: "The Histories of Polybius, Volume 1 (of 2)"
     author: "Polybius"
